@@ -76,7 +76,7 @@
     <section id="uni-logos" class="row teal lighten-1">
       <div class="col s10 m4 offset-s1 offset-m1">
         <div class="row">
-          <a class="col s12" href="#"><img class="responsive-img" src="res/uniroma2_logo.png" alt=""></a>
+          <a class="col s12" href="#"><img class="responsive-img" src="res/logos/uniroma2_logo.png" alt=""></a>
         </div>
         <div class="divider teal lighten-4"></div>
         <div class="row">
@@ -85,7 +85,7 @@
       </div>
       <div class="col s10 m4 offset-s1 offset-m2">
         <div class="row">
-          <a class="col s12" href="#"><img class="responsive-img" src="res/uniroma1_logo.png" alt=""></a>
+          <a class="col s12" href="#"><img class="responsive-img" src="res/logos/uniroma1_logo.png" alt=""></a>
         </div>
         <div class="divider teal lighten-4"></div>
         <div class="row">
@@ -118,6 +118,7 @@
     <script src="js/jquery-3.2.0.min.js" charset="utf-8"></script>
     <script src="js/materialize.min.js"></script>
     <script src="js/fabric.min.js"></script>
+    <script src="js/speech-recognition.js"></script>
     <script src="js/script.js"></script>
   </body>
 </html>
