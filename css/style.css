@@ -1,0 +1,190 @@
+
+/*
+  GENERAL CLASSES =============================================================>
+*/
+
+#my-scope .f1{
+  font-size: 3.25em;
+}
+
+#my-scope .f2{
+   font-size: 3em;
+}
+
+#my-scope .f3{
+  font-size: 2.75em;
+}
+
+#my-scope .f4{
+  font-size: 2.5em;
+}
+
+#my-scope .f5{
+  font-size: 2.25em;
+}
+
+#my-scope .f6{
+  font-size: 2em;
+}
+
+#my-scope .f7{
+  font-size: 1.75em;
+}
+
+#my-scope .f8{
+  font-size: 1.5em;
+}
+
+#my-scope .f9{
+  font-size: 1.25em;
+}
+
+#my-scope .f10{
+  font-size: 1em;
+}
+
+#my-scope .f11{
+  font-size: .75em;
+}
+
+#my-scope .f12{
+  font-size: .5em;
+}
+
+#my-scope .f13{
+  font-size: .25em;
+}
+
+#my-scope .container{
+  max-width: 85%;
+}
+
+#my-scope .canvas-container{
+  margin: 0 auto;
+}
+
+/*
+  PAGE STYLE ==================================================================>
+*/
+
+html{
+  font-size: 4vw;
+}
+
+main.container{
+  margin: 3.5rem auto;
+}
+
+main.container .card-panel{
+  padding: 1rem 1.5rem;
+}
+
+main.container .card-panel .row{
+  margin-bottom: 0;
+}
+
+#form .prefix{
+  top: 1rem;
+}
+
+#command:focus:not([readonly]) + label, #command + label.active{
+  font-size: .8rem;
+}
+
+#uni-logos.row{
+  margin-bottom: 0;
+}
+
+#uni-logos img{
+  max-height: 5rem;
+  display: block;
+  margin: .5rem auto;
+}
+
+#mic{
+  text-transform: uppercase;
+  transition: all .3s ease-out;
+}
+
+#mic div{
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#mic i{
+  height: 0;
+  width: 0;
+  opacity: 0;
+  transition: all .3s ease-out;
+}
+
+#mic i.active{
+  height: auto;
+  width: auto;
+  opacity: 1;
+}
+
+#panel.card-panel{
+  padding: 0;
+  /* min-height: 25rem; */
+  margin: 0;
+}
+
+#panel .collection{
+  margin: 0;
+}
+
+/*
+  MEDIA QUERIES ===============================================================>
+*/
+
+@media (max-width: 350px) and (min-width: 251px) {
+  html{
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 600px) and (min-width: 351px) {
+  html{
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .valign-wrapper.valign-wrapper-med-and-up{
+    display: inherit;
+  }
+
+  #command{
+    margin-bottom: 0;
+  }
+}
+
+@media (min-width: 601px) {
+  #uni-logos img{
+    /* max-height: 2.9rem; */
+    /* min-height: 6.9rem; */
+  }
+
+  .row .col.offset-m0{
+    margin-left: 0%;
+  }
+}
+
+@media (min-width: 993px){
+  .container {
+    width: 95%;
+  }
+}
+
+@media (max-width: 1200px) and (min-width: 601px) {
+  html{
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1201px) {
+  html{
+    font-size: 16px;
+  }
+}
