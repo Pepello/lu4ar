@@ -8,6 +8,12 @@
     <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="css/materialize.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <!-- <script>
+        var paths = {
+            res: "<?= dirname(__FILE__) . '/res' ?>",
+            icons: "<?= dirname(__FILE__) . '/res/icons' ?>",
+        }
+    </script> -->
   </head>
   <body class="grey lighten-3">
     <header>
@@ -42,26 +48,6 @@
             </ul>
             <div id="objects" class="">
               <ul class="collection">
-                <li class="collection-item avatar">
-                  <img src="//www.placehold.it/64x64" alt="object" class="circle">
-                  <span class="title">Obj 1</span>
-                  <p>Description</p>
-                </li>
-                <li class="collection-item avatar">
-                  <img src="//www.placehold.it/64x64" alt="object" class="circle">
-                  <span class="title">Obj 2</span>
-                  <p>Description</p>
-                </li>
-                <li class="collection-item avatar">
-                  <img src="//www.placehold.it/64x64" alt="object" class="circle">
-                  <span class="title">Obj 3</span>
-                  <p>Description</p>
-                </li>
-                <li class="collection-item avatar">
-                  <img src="//www.placehold.it/64x64" alt="object" class="circle">
-                  <span class="title">Obj 4</span>
-                  <p>Description</p>
-                </li>
               </ul>
             </div>
             <div id="others" class="">
@@ -118,6 +104,8 @@
     <script src="js/jquery-3.2.0.min.js" charset="utf-8"></script>
     <script src="js/materialize.min.js"></script>
     <script src="js/fabric.min.js"></script>
+    <script src="js/draw.js"></script>
+    <script src="js/animation.js"></script>
     <script src="js/speech-recognition.js"></script>
     <script src="js/script.js"></script>
   </body>

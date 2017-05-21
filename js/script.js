@@ -1,47 +1,34 @@
 /*jshint esversion: 6 */
 var canvas, sr;
+var robot;
+
+var typologies = {};
 var hypotheses = [];
 var entities = [];
-var chain;
+
 var port = "2468";
 var grid = 25;
+var block = grid*2;
+var paths = {
+    res: "res",
+    icons: "res/icons"
+}
 
+var drag_drop = {
+    type: ""
+}
 
 entities = [
     {
-        "atom":"book 1",
+        "atom":"Canterbury tales",
         "type":"book",
         "preferredLexicalReference":"book",
         "alternativeLexicalReferences":["volume","manual"],
         "coordinate":{
-            "x":"13.0",
-            "y":"6.5",
-            "z":"3.5",
-            "angle":"3.5"
-        }
-    },
-	{
-        "atom":"table 1",
-        "type":"table",
-        "preferredLexicalReference":"table",
-        "alternativeLexicalReferences":["bar","counter","desk","board"],
-        "coordinate":{
             "x":"12.0",
             "y":"8.5",
-            "z":"0.0",
-            "angle":"1.6"
-        }
-    },
-	{
-        "atom":"chair 1",
-        "type":"chair",
-        "preferredLexicalReference":"chair",
-        "alternativeLexicalReferences":[],
-        "coordinate":{
-            "x":"14.0",
-            "y":"9.5",
-            "z":"0.0",
-            "angle":"1.6"
+            "z":"3.5",
+            "angle":"3.5"
         }
     }
 ];
@@ -51,9 +38,20 @@ function setHypotheses(obj){
     $.each(obj, function(i, r){
         hypotheses[i] = {
             transcription: r.transcript,
-            confidence: r.confidence+""
+            confidence: r.confidence,
+            rank: i
         };
     });
+}
+
+function addEntity(type){
+    var obj = new Entity({
+            atom: type+" "+entities.length,
+            typology: typologies[type],
+            // coordinate: {x: 0, y: 0, z: 0, angle: 0}
+        }
+    );
+    entities.push(obj);
 }
 
 function sendCommand(f = undefined, opt = {}){
@@ -66,95 +64,92 @@ function sendCommand(f = undefined, opt = {}){
         entities: JSON.stringify({entities: entities})
     },
     success: function(resp){
-        chain = resp;
-      alert(chain, 5000);
-      if(f !== undefined){
-        f(opt);
-      }
+        alert(resp, 5000);
+        parseChain(resp)
+        if(f !== undefined){
+            f(opt);
+        }
     }
   });
 
 }
 
-function drawGrid(size, color){
-  for (var i = 0; i < (canvas.width / size); i++) {
-    canvas.add(new fabric.Line([ i * size, 0, i * size, canvas.height], { stroke: color, selectable: false }));
-    canvas.add(new fabric.Line([ 0, i * size, canvas.width, i * size], { stroke: color, selectable: false }));
-  }
+function onDragStart(){
+    drag_drop.type = $(this).data("type");
+}
+
+function onDragEnd(){
+    drag_drop.type = "";
+}
+
+function onDragEnter(event){
+    event.preventDefault();
+    event.stopPropagation();
+    $(".canvas-container").addClass("dragging");
+}
+
+function onDragOver(event){
+    event.preventDefault();
+    event.stopPropagation();
+}
+
+function onDragLeave(event){
+    event.preventDefault();
+    event.stopPropagation();
+    $(".canvas-container").removeClass("dragging");
+}
+
+function onDrop(event){
+    event.preventDefault();
+    event.stopPropagation();
+    $(".canvas-container").removeClass("dragging");
+    addEntity(drag_drop.type);
+}
+
+function fillTypologies(){
+    $.each(typologies, function(i, typology){
+        var item = $(
+            '<li class="collection-item avatar" draggable="true" data-type="'+typology.type+'">'+
+              '<img src="'+typology.getUrl()+'" alt="'+typology.type+'" class="circle" draggable="false">'+
+              '<span class="title">'+typology.type+'</span>'+
+            '</li>'
+        );
+        item.on("dragstart", onDragStart);
+        item.on("dragend", onDragEnd);
+        $("#objects .collection").append(item);
+    });
 }
 
 function toFloating(){
-  $("#mic").addClass("btn-floating waves-effect waves-circle waves-light");
-  $("#mic div").text("");
-  $("#mic i").addClass("active");
+    $("#mic").addClass("btn-floating waves-effect waves-circle waves-light");
+    $("#mic div").text("");
+    $("#mic i").addClass("active");
 }
 
 function toButton(){
-  $("#mic").removeClass("btn-floating waves-effect waves-circle waves-light");
-  $("#mic div").text("speak");
-  $("#mic i").removeClass("active");
+    $("#mic").removeClass("btn-floating waves-effect waves-circle waves-light");
+    $("#mic div").text("speak");
+    $("#mic i").removeClass("active");
 }
 
-function alert(msg, time = 3000){
-  Materialize.toast(msg, time);
+function alert(msg, time = 3000, style = ""){
+    Materialize.toast(msg, time, style);
 }
 
 function error(msg, time = 3500){
-  Materialize.toast(msg, time, "red darken-4");
+    Materialize.toast(msg, time, "red darken-4");
 }
 
 $(function(){
 
-    sr = new webkitSpeechRecognition();
-    sr.isStarted = false;
-    sr.interimResults = true;
-    sr.maxAlternatives = 5;
-    sr.onstart = srOnStart;
-    sr.onaudiostart = srOnAudioStart;
-    sr.onaudioend = srOnAudioEnd;
-    sr.onspeechstart = srOnSpeechStart;
-    sr.onspeechend = srOnSpeechEnd;
-    sr.onsoundstart = srOnSoundStart;
-    sr.onsoundend = srOnSoundEnd;
-    sr.onnomatch = srOnNoMatch;
-    sr.onerror = srOnError;
-    sr.onend = srStop;
-    sr.onresult = srOnResult;
+    initSpeechRecognition();
+    initGraphic();
+    fillTypologies();
 
-    $("#map").attr("width", "1000px");
-    $("#map").attr("height", "1000px");
-    canvas = new fabric.Canvas("map");
-    canvas.setBackgroundColor("#eee");
-    canvas.on('object:moving', function(options) {
-    options.target.set({
-        left: Math.round(options.target.left / grid) * grid,
-        top: Math.round(options.target.top / grid) * grid
-        });
-    });
-
-    drawGrid(grid, "#fff");
-
-  canvas.add(new fabric.Rect({
-    left: 100,
-    top: 100,
-    width: 50,
-    height: 50,
-    fill: '#faa',
-    originX: 'left',
-    originY: 'top',
-    centeredRotation: true
-  }));
-
-  canvas.add(new fabric.Circle({
-    left: 300,
-    top: 300,
-    radius: 50,
-    fill: '#9f9',
-    originX: 'left',
-    originY: 'top',
-    centeredRotation: true
-  }));
-
+    $(".canvas-container").on("dragenter", onDragEnter);
+    $(".canvas-container").on("dragover", onDragOver);
+    $(".canvas-container").on("dragleave", onDragLeave);
+    $(".canvas-container").on("drop", onDrop);
     $("#mic").click(srStart);
     $("#form").submit(function(e){
         if(sr.isStarted){

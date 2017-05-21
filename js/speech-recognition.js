@@ -101,3 +101,21 @@ function srOnSoundEnd(e){
 function srOnNoMatch(e){
     console.log("no match");
 }
+
+function initSpeechRecognition(){
+    sr = new webkitSpeechRecognition();
+    sr.isStarted = false;
+    sr.interimResults = true;
+    sr.maxAlternatives = 5;
+    sr.onstart = srOnStart;
+    sr.onaudiostart = srOnAudioStart;
+    sr.onaudioend = srOnAudioEnd;
+    sr.onspeechstart = srOnSpeechStart;
+    sr.onspeechend = srOnSpeechEnd;
+    sr.onsoundstart = srOnSoundStart;
+    sr.onsoundend = srOnSoundEnd;
+    sr.onnomatch = srOnNoMatch;
+    sr.onerror = srOnError;
+    sr.onend = srStop;
+    sr.onresult = srOnResult;
+}

@@ -63,6 +63,32 @@
   margin: 0 auto;
 }
 
+[draggable="true"] {
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+  /* Required to make elements draggable in old WebKit */
+  -khtml-user-drag: element;
+  -webkit-user-drag: element;
+}
+
+.dragging{
+    animation: blink 1.2s ease infinite;
+}
+
+@keyframes blink{
+    0% {
+        opacity: 1;
+    }
+    50%{
+        opacity: .5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
 /*
   PAGE STYLE ==================================================================>
 */
@@ -132,6 +158,14 @@ main.container .card-panel .row{
 
 #panel .collection{
   margin: 0;
+}
+
+#objects .collection li{
+    cursor: move;
+}
+
+#objects .collection li img{
+    border-radius: 0;
 }
 
 /*
