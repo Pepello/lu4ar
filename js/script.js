@@ -19,18 +19,18 @@ var drag_drop = {
 }
 
 entities = [
-    {
-        "atom":"Canterbury tales",
-        "type":"book",
-        "preferredLexicalReference":"book",
-        "alternativeLexicalReferences":["volume","manual"],
-        "coordinate":{
-            "x":"12.0",
-            "y":"8.5",
-            "z":"3.5",
-            "angle":"3.5"
-        }
-    }
+    // {
+    //     "atom":"Kitchen",
+    //     "type":"kitchen",
+    //     "preferredLexicalReference":"kitchen",
+    //     "alternativeLexicalReferences":[],
+    //     "coordinate":{
+    //         "x":"12.0",
+    //         "y":"8.5",
+    //         "z":"3.5",
+    //         "angle":"3.5"
+    //     }
+    // }
 ];
 
 function setHypotheses(obj){

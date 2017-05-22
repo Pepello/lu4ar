@@ -129,18 +129,21 @@ function Entity(obj){
     this.typology = obj.typology;
     // this.coordinate = obj.coordinate;
     this.drawable = {};
+    this.getCoordinate = function(){
+        return {
+            x: this.drawable.left+this.drawable.width*.5+"",
+            y: this.drawable.top+this.drawable.height*.5+"",
+            z: "0",
+            angle: this.drawable.angle+"",
+        };
+    }
     this.toJSON = function(){
         return {
             atom: this.atom,
             type: this.typology.type,
             preferredLexicalReference: this.typology.preferredLexicalReference,
             alternativeLexicalReferences: this.typology.alternativeLexicalReferences,
-            coordinate: {
-                x: this.drawable.left+this.drawable.width*.5+"",
-                y: this.drawable.top+this.drawable.height*.5+"",
-                z: "0",
-                angle: this.drawable.angle+"",
-            }
+            coordinate: this.getCoordinate()
         }
     }
     this.load = (function(entity){
@@ -177,7 +180,7 @@ function Robot(obj){
     this.greet = function(){
         this.say("Hi, I'm "+this.entity.atom, 5000, "lime");
     }
-    this.move = function(){
-
+    this.move = function(props){
+        this.entity.drawable.animate(props, {onChange: canvas.renderAll.bind(canvas)});
     }
 }
