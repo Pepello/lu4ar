@@ -63,6 +63,14 @@
   margin: 0 auto;
 }
 
+#my-scope .material-icons.next{
+    margin-left: .5rem;
+}
+
+#my-scope .material-icons.prev{
+    margin-right: .5rem;
+}
+
 [draggable="true"] {
   -moz-user-select: none;
   -khtml-user-select: none;

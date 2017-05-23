@@ -1,10 +1,17 @@
 
 
-function drawGrid(size, color){
-  for (var i = 0; i < (canvas.width / size); i++) {
-    canvas.add(new fabric.Line([ i * size, 0, i * size, canvas.height], { stroke: color, selectable: false }));
-    canvas.add(new fabric.Line([ 0, i * size, canvas.width, i * size], { stroke: color, selectable: false }));
+function drawGrid(color){
+  for (var i = 0; i < (canvas.width / grid); i++) {
+    canvas.add(new fabric.Line([ i * grid, 0, i * grid, canvas.height], { stroke: color, selectable: false }));
+    canvas.add(new fabric.Line([ 0, i * grid, canvas.width, i * grid], { stroke: color, selectable: false }));
   }
+}
+
+function snapToGrid(options){
+    options.target.set({
+        left: Math.round(options.target.left / grid) * grid,
+        top: Math.round(options.target.top / grid) * grid
+    });
 }
 
 function initCanvas(){
@@ -12,14 +19,8 @@ function initCanvas(){
     $("#map").attr("height", "1000px");
     canvas = new fabric.Canvas("map");
     canvas.setBackgroundColor("#eee");
-    canvas.on('object:moving', function(options) {
-    options.target.set({
-        left: Math.round(options.target.left / grid) * grid,
-        top: Math.round(options.target.top / grid) * grid
-        });
-    });
-
-    drawGrid(grid, "#fff");
+    canvas.on('object:moving', snapToGrid);
+    drawGrid("#fff");
 
   // canvas.add(new fabric.Rect({
   //   left: 100,
@@ -53,11 +54,10 @@ function initRobot(){
                 alternativeLexicalReferences: ["automa", "android"],
                 img : {
                     name: "android",
-                    type: "svg"
+                    type: "png"
                 },
                 slot: 2
             }),
-            coordinate: {x: 0, y: 0, z: 0, angle: 0}
         })
     });
     robot.greet();
@@ -152,14 +152,14 @@ function Entity(obj){
             fabric.loadSVGFromURL(url, function(objs, opts){
                 // opts.top = entity.coordinate.y;
                 // opts.left = entity.coordinate.x;
-                opts.lockRotation = true;
+                opts.lockRotation = opts.lockScalingX = opts.lockScalignY = opts.lockScalingFlip = true;
                 entity.drawable = new fabric.PathGroup(objs, opts);
                 entity.drawable.scaleToWidth(block*entity.typology.slot);
                 canvas.add(entity.drawable);
             });
         else
             fabric.Image.fromURL(url, function(obj){
-                obj.lockRotation = true;
+                obj.lockRotation = obj.lockScalingX = obj.lockScalingY = obj.lockScalingFlip = true;
                 entity.drawable = obj;
                 canvas.add(obj);
             },
@@ -174,11 +174,13 @@ function Entity(obj){
 
 function Robot(obj){
     this.entity = obj.entity;
-    this.say = function(message, time, style){
-        alert(message, time, style);
+    this.say = function(message, success = true, icon = "android"){
+        var style;
+        if(success) style = "lime"; else style = "red darken-2";
+        alert("<i class='material-icons prev'>"+icon+"</i>"+message, 5000, style+" rounded");
     }
     this.greet = function(){
-        this.say("Hi, I'm "+this.entity.atom, 5000, "lime");
+        this.say("Hi, I'm "+this.entity.atom);
     }
     this.move = function(props){
         this.entity.drawable.animate(props, {onChange: canvas.renderAll.bind(canvas)});

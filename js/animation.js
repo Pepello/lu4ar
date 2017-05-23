@@ -4,6 +4,7 @@ function parseChain(chain){
     var actions = chain.split("#");
     console.dir(actions);
     $.each(actions, function(i, action){
+        alert(action);
         parseAction(action);
     })
 }
@@ -32,7 +33,11 @@ function parseAction(action){
 
 function MOTION(params){
     if(params[0].key === "goal"){
-        move(getEntityFromName(params[0].value));
+        var target = getEntityFromName(params[0].value);
+        if(target)
+            move();
+        else
+            robot.say("Target not found", false, "error");
     }
 }
 
@@ -54,6 +59,6 @@ function searchEntity(where, what){
     var atom = where.indexOf(what.atom) >= 0;
     var type = where.indexOf(what.typology.type) >= 0;
     var pref = where.indexOf(what.typology.preferredLexicalReference) >= 0;
-    alert(atom+" "+type+" "+pref+" -> "+ (atom || type || pref), 7000);
+    // alert(atom+" "+type+" "+pref+" -> "+ (atom || type || pref), 7000);
     return (atom || type || pref);
 }

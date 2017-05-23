@@ -58,13 +58,11 @@ function sendCommand(f = undefined, opt = {}){
   $.ajax({
     type: "POST",
     url: "//127.0.0.1:"+port+"/service/nlu",
-    // data: objs,
     data: {
         hypo: JSON.stringify({hypotheses: hypotheses}),
         entities: JSON.stringify({entities: entities})
     },
     success: function(resp){
-        alert(resp, 5000);
         parseChain(resp)
         if(f !== undefined){
             f(opt);
