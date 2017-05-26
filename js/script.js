@@ -1,6 +1,7 @@
 /*jshint esversion: 6 */
 var canvas, sr;
 var robot;
+var last_chain;
 
 var typologies = {};
 var hypotheses = [];
@@ -12,11 +13,11 @@ var block = grid*2;
 var paths = {
     res: "res",
     icons: "res/icons"
-}
+};
 
 var drag_drop = {
     type: ""
-}
+};
 
 entities = [
     // {
@@ -63,7 +64,9 @@ function sendCommand(f = undefined, opt = {}){
         entities: JSON.stringify({entities: entities})
     },
     success: function(resp){
-        parseChain(resp)
+        last_chain = resp;
+        alert(last_chain);
+        parseChain(resp);
         if(f !== undefined){
             f(opt);
         }

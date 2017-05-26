@@ -35,7 +35,7 @@ function MOTION(params){
     if(params[0].key === "goal"){
         var target = getEntityFromName(params[0].value);
         if(target)
-            move();
+            move(target);
         else
             robot.say("Target not found", false, "error");
     }
