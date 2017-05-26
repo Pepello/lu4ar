@@ -104,9 +104,10 @@
     <script src="js/jquery-3.2.0.min.js" charset="utf-8"></script>
     <script src="js/materialize.min.js"></script>
     <script src="js/fabric.min.js"></script>
+    <script src="js/objects.js"></script>
+    <script src="js/speech.js"></script>
     <script src="js/draw.js"></script>
     <script src="js/animation.js"></script>
-    <script src="js/speech-recognition.js"></script>
-    <script src="js/script.js"></script>
+    <script src="js/init.js"></script>
   </body>
 </html>

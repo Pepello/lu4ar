@@ -6,8 +6,9 @@ var last_chain;
 var typologies = {};
 var hypotheses = [];
 var entities = [];
+var atoms_to_entities = {};
 
-var port = "2468";
+var port = 4201;
 var grid = 25;
 var block = grid*2;
 var paths = {
@@ -18,42 +19,6 @@ var paths = {
 var drag_drop = {
     type: ""
 };
-
-entities = [
-    // {
-    //     "atom":"Kitchen",
-    //     "type":"kitchen",
-    //     "preferredLexicalReference":"kitchen",
-    //     "alternativeLexicalReferences":[],
-    //     "coordinate":{
-    //         "x":"12.0",
-    //         "y":"8.5",
-    //         "z":"3.5",
-    //         "angle":"3.5"
-    //     }
-    // }
-];
-
-function setHypotheses(obj){
-    hypotheses = [];
-    $.each(obj, function(i, r){
-        hypotheses[i] = {
-            transcription: r.transcript,
-            confidence: r.confidence,
-            rank: i
-        };
-    });
-}
-
-function addEntity(type){
-    var obj = new Entity({
-            atom: type+" "+entities.length,
-            typology: typologies[type],
-            // coordinate: {x: 0, y: 0, z: 0, angle: 0}
-        }
-    );
-    entities.push(obj);
-}
 
 function sendCommand(f = undefined, opt = {}){
   $.ajax({
@@ -107,7 +72,7 @@ function onDrop(event){
     addEntity(drag_drop.type);
 }
 
-function fillTypologies(){
+function fillTypologiesCollection(){
     $.each(typologies, function(i, typology){
         var item = $(
             '<li class="collection-item avatar" draggable="true" data-type="'+typology.type+'">'+
@@ -144,8 +109,9 @@ function error(msg, time = 3500){
 $(function(){
 
     initSpeechRecognition();
-    initGraphic();
-    fillTypologies();
+    initObjects();
+    initCanvas();
+    fillTypologiesCollection();
 
     $(".canvas-container").on("dragenter", onDragEnter);
     $(".canvas-container").on("dragover", onDragOver);
@@ -156,11 +122,12 @@ $(function(){
         if(sr.isStarted){
             srAbort();
         }
-        setHypotheses([{transcript: $("#command").val(), confidence: "1"}]);
-        sendCommand();
+        if($("#command").val()){
+            setHypotheses([{transcript: $("#command").val(), confidence: "1"}]);
+            sendCommand();
+        }
         e.preventDefault();
     });
     $('ul.tabs').tabs();
-
 
 });

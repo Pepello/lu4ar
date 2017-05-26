@@ -1,4 +1,4 @@
-
+/*jshint esversion: 6 */
 
 function srStart(){
     if(!sr.isStarted){
@@ -45,28 +45,35 @@ function srOnError(e){
     srStop();
 }
 
-function srOnResult(e){
-    var results = e.results;
-    var length = results.length;
-    var str = "";
-    // console.log(results);
+function fillHypothesesCollection(list){
     $("#others").empty();
     var collection = $('<div class="collection"></div>');
-    $.each(results, function(j, res){
-        str += res[0].transcript;
-        for(var i = 0; i < res.length; i++) {
-        var alt = $('<a href="#!" class="collection-item">'+res[i].transcript+'</a>');
+    $.each(list, function(i, transcript){
+        var alt = $('<a href="#!" class="collection-item">'+transcript+'</a>');
         alt.click(function(){
             $("#command").val($(this).text());
         });
         collection.append(alt);
-    }
-    $("#panel ul.tabs").tabs("select_tab", "others");
     });
     $("#others").append(collection);
-    $("#command").val(str);
-    Materialize.updateTextFields();
+}
 
+function srOnResult(e){
+    var results = e.results;
+    var length = results.length;
+    var str = "";
+    var list = [];
+    // console.log(results);
+    $.each(results, function(j, res){
+        str += res[0].transcript;
+        for(var i = 0; i < res.length; i++){
+            list.push(res[i].transcript);
+        }
+    });
+    $("#command").val(str);
+    fillHypothesesCollection(list);
+    $("#panel ul.tabs").tabs("select_tab", "others");
+    Materialize.updateTextFields();
     if(results[length-1].isFinal){
         setHypotheses(results[length-1]);
         sendCommand();

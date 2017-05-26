@@ -1,4 +1,4 @@
-
+/*jshint esversion: 6 */
 
 function parseChain(chain){
     var actions = chain.split("#");
@@ -6,23 +6,31 @@ function parseChain(chain){
     $.each(actions, function(i, action){
         alert(action);
         parseAction(action);
-    })
+    });
 }
 
 function parseAction(action){
     var verb = action.split("(", 1)[0];
-    var params = action.substring(action.indexOf("(")+1, action.indexOf(")")).split(",");
-    var params_list = [];
-    $.each(params, function(i, param){
-        params_list[i] = {
-            key: param.split(":", 1)[0],
-            value: param.split("\"")[1]
-        }
+    var args = action.substring(action.indexOf("(")+1, action.indexOf(")")).split(",");
+    var args_list = [];
+    $.each(args, function(i, arg){
+        var param = arg.split("|")[0];
+        var entity = arg.split("|")[1];
+        args_list[i] = {
+            arg: {
+                key: param.split(":", 1)[0],
+                value: param.split("\"")[1]
+            },
+            entity: {
+                    key: entity.split(":", 1)[0],
+                    value: entity.split("\"")[1].split("[")[0]
+                }
+        };
     });
-    console.dir(params_list);
+    console.dir(args_list);
     switch(verb){
         case "MOTION":
-            MOTION(params_list);
+            MOTION(args_list);
             break;
         case "TAKING":
             break;
@@ -32,12 +40,11 @@ function parseAction(action){
 }
 
 function MOTION(params){
-    if(params[0].key === "goal"){
-        var target = getEntityFromName(params[0].value);
-        if(target)
-            move(target);
+    if(params[0].arg.key === "goal"){
+        if(existsAtom(params[0].entity.value))
+            move(getEntityByAtom(params[0].entity.value));
         else
-            robot.say("Target not found", false, "error");
+            robot.say(params[0].entity.value+" not found", false, "error");
     }
 }
 
