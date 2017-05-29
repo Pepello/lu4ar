@@ -1,20 +1,5 @@
 /*jshint esversion: 6 */
 
-entities = [
-    // {
-    //     "atom":"Kitchen",
-    //     "type":"kitchen",
-    //     "preferredLexicalReference":"kitchen",
-    //     "alternativeLexicalReferences":[],
-    //     "coordinate":{
-    //         "x":"12.0",
-    //         "y":"8.5",
-    //         "z":"3.5",
-    //         "angle":"3.5"
-    //     }
-    // }
-];
-
 class Coordinate{
     constructor(_x, _y, _z, _angle){
         this.x = _x;
@@ -29,6 +14,14 @@ class Coordinate{
             y: this.y.toString(),
             z: this.z.toString(),
             angle: this.angle.toString()
+        };
+    }
+
+    toFabric(){
+        return {
+            top: this.y,
+            left: this.x,
+            angle: this.angle
         };
     }
 }
@@ -85,6 +78,11 @@ class Entity extends Typology{
     getHeight(){
         return this.drawable.height;
     }
+    getAnchorPoint(coord){
+        var _coord = this.getCoordinate();
+        var dir_x = _coord.x - coord.x > 0 ? 0 : 1;
+        return new Coordinate(_coord.x + dir_x*this.getWidth(), _coord.y + this.getHeight()*.5, 0, 0);
+    }
 
     load(){
         var _this = this;
@@ -97,7 +95,6 @@ class Entity extends Typology{
             });
         else
             fabric.Image.fromURL(this.getUrl(), function(obj){
-                console.dir(_this);
                 obj.lockRotation = obj.lockScalingX = obj.lockScalingY = obj.lockScalingFlip = true;
                 _this.drawable = obj;
                 canvas.add(obj);
@@ -119,12 +116,23 @@ class Entity extends Typology{
 class Robot extends Entity{
     constructor(_atom, _type, _plr, _alr, _img, _slot){
         super(_atom, _type, _plr, _alr, _img, _slot);
+        this.duration = 2500;
+    }
+
+    hasAction(action){
+        return action in this;
+    }
+
+    getArrivalPoint(anchor){
+        var _coord = this.getCoordinate();
+        var dir_x = anchor.x - _coord.x > 0 ? -1 : 0;
+        return new Coordinate(anchor.x + dir_x*this.getWidth(), anchor.y - this.getHeight()*.5, 0, 0);
     }
 
     say(message, success = true, icon = "android"){
         var style;
         if(success) style = "lime"; else style = "red darken-2";
-        alert("<i class='material-icons prev'>"+icon+"</i>"+message, 5000, style+" rounded");
+        alert("<i class='material-icons prev'>"+icon+"</i>"+message, this.duration, style+" rounded");
     }
 
     greet(){
@@ -132,98 +140,61 @@ class Robot extends Entity{
     }
 
     animate(props){
-        this.drawable.animate(props, {onChange: canvas.renderAll.bind(canvas)});
+        this.drawable.animate(props, {
+            duration: this.duration,
+            onChange: canvas.renderAll.bind(canvas),
+            easing: fabric.util.ease.easeInOutQuart
+        });
     }
 
-    move(props){
-        this.animate(props);
+    move(_coord){
+        var coord = this.getArrivalPoint(_coord);
+        this.animate(coord.toFabric());
+    }
+
+    execute(chain){
+        var runningDuration = 0;
+        for (var i = 0; i < chain.length; i++){
+            window.setTimeout(chain[i], runningDuration);
+            runningDuration += this.duration;
+        }
+    }
+
+    MOTION(args){
+        var queue = [];
+        if(args.hasOwnProperty("goal") && args.goal.hasOwnProperty("entity"))
+            queue.push(() => (this.move(getEntityByAtom(args.goal.entity.value).getAnchorPoint(this.getCoordinate()))));
+        else if(args.hasOwnProperty("goal"))
+            queue.push(() => (this.say("I don't know where is \""+args.goal.value+"\"...", false)));
+        else{
+            queue.push(() => (this.say("I don't know where to go...", false)));
+        }
+        return queue;
+    }
+
+    BRINGING(args){
+        var queue = [];
+        if(args.hasOwnProperty("source") && args.goal.hasOwnProperty("entity")){
+            queue.push(() => (this.move(getEntityByAtom(args.source.entity.value).getCoordinate())));
+            if(args.hasOwnProperty("theme") && args.theme.hasOwnProperty("entity")){
+                queue.push(() => (this.move(getEntityByAtom(args.theme.entity.value).getCoordinate())));
+                queue.push(() => (this.take(getEntityByAtom(args.theme.entity.value).getAnchorPoint())));
+            }
+            else if(args.hasOwnProperty("theme"))
+                queue.push(() => (this.say("I don't know what is \""+args.theme.value+"\"...", false)));
+            else
+                queue.push(() => (this.say("I don't know what take...", false)));
+        }
+        else if(args.hasOwnProperty("theme") && args.theme.hasOwnProperty("entity"))
+            queue.push(() => (this.move(getEntityByAtom(args.theme.entity.value).getCoordinate())));
+        else if(args.hasOwnProperty("source"))
+            queue.push(() => (this.say("I don't know where is \""+args.source.value+"\"...", false)));
+        else{
+            queue.push(() => (this.say("I don't know where to go...", false)));
+        }
+        return queue;
     }
 }
-
-// function Coordinate(obj){
-//     this.x = obj.x;
-//     this.y = obj.y;
-//     this.z = obj.z;
-//     this.angle = obj.angle;
-//     this.toJSON = function(){
-//         return {
-//             x: this.x.toString(),
-//             y: this.y.toString(),
-//             z: this.z.toString(),
-//             angle: this.angle.toString()
-//         };
-//     };
-// }
-
-// function Typology(obj){
-//     this.type = obj.type;
-//     this.preferredLexicalReference = obj.preferredLexicalReference;
-//     this.alternativeLexicalReferences = obj.alternativeLexicalReferences;
-//     this.img = obj.img;
-//     this.slot = obj.slot;
-//     this.getUrl = function(){
-//         return paths.icons+"/"+this.img.name+"."+this.img.type;
-//     };
-// }
-
-// function Entity(obj){
-//     this.atom = obj.atom;
-//     this.typology = obj.typology;
-//     this.drawable = {};
-//     this.getCoordinate = function(){
-//         return new Coordinate(this.drawable.left, this.drawable.top, 0, this.drawable.angle);
-//     };
-//     this.getWidth = function(){
-//         return this.drawable.width;
-//     };
-//     this.getHeight = function(){
-//         return this.drawable.height;
-//     };
-//     this.toJSON = function(){
-//         return {
-//             atom: this.atom,
-//             type: this.typology.type,
-//             preferredLexicalReference: this.typology.preferredLexicalReference,
-//             alternativeLexicalReferences: this.typology.alternativeLexicalReferences,
-//             coordinate: this.getCoordinate()
-//         };
-//     };
-//     this.addToCanvas = (function(entity){
-//         var url = entity.typology.getUrl();
-//         if(entity.typology.img.type == "svg")
-//             fabric.loadSVGFromURL(url, function(objs, opts){
-//                 opts.lockRotation = opts.lockScalingX = opts.lockScalignY = opts.lockScalingFlip = true;
-//                 entity.drawable = new fabric.PathGroup(objs, opts);
-//                 entity.drawable.scaleToWidth(block*entity.typology.slot);
-//                 canvas.add(entity.drawable);
-//             });
-//         else
-//             fabric.Image.fromURL(url, function(obj){
-//                 obj.lockRotation = obj.lockScalingX = obj.lockScalingY = obj.lockScalingFlip = true;
-//                 entity.drawable = obj;
-//                 canvas.add(obj);
-//             },
-//             {
-//                 width: entity.typology.slot*block,
-//                 height: entity.typology.slot*block
-//             });
-//     })(this);
-// }
-
-// function Robot(obj){
-//     this.entity = obj.entity;
-//     this.say = function(message, success = true, icon = "android"){
-//         var style;
-//         if(success) style = "lime"; else style = "red darken-2";
-//         alert("<i class='material-icons prev'>"+icon+"</i>"+message, 5000, style+" rounded");
-//     };
-//     this.greet = function(){
-//         this.say("Hi, I'm "+this.entity.atom);
-//     };
-//     this.move = function(props){
-//         this.entity.drawable.animate(props, {onChange: canvas.renderAll.bind(canvas)});
-//     };
-// }
 
 function existsAtom(atom){
     return atoms_to_entities.hasOwnProperty(atom);
@@ -275,6 +246,4 @@ function initTypologies(){
 function initObjects(){
     initRobot();
     initTypologies();
-    var c = new Coordinate(1,2,3,4);
-    console.log(JSON.stringify(c));
 }

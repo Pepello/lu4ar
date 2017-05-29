@@ -1,7 +1,7 @@
 /*jshint esversion: 6 */
 var canvas, sr;
 var robot;
-var last_chain;
+var last_chain_s;
 
 var typologies = {};
 var hypotheses = [];
@@ -15,7 +15,6 @@ var paths = {
     res: "res",
     icons: "res/icons"
 };
-
 var drag_drop = {
     type: ""
 };
@@ -30,7 +29,7 @@ function sendCommand(f = undefined, opt = {}){
     },
     success: function(resp){
         last_chain = resp;
-        alert(last_chain);
+        // alert(last_chain);
         parseChain(resp);
         if(f !== undefined){
             f(opt);
@@ -49,8 +48,8 @@ function onDragEnd(){
 }
 
 function onDragEnter(event){
-    event.preventDefault();
-    event.stopPropagation();
+    // event.preventDefault();
+    // event.stopPropagation();
     $(".canvas-container").addClass("dragging");
 }
 
@@ -60,14 +59,14 @@ function onDragOver(event){
 }
 
 function onDragLeave(event){
-    event.preventDefault();
-    event.stopPropagation();
+    // event.preventDefault();
+    // event.stopPropagation();
     $(".canvas-container").removeClass("dragging");
 }
 
 function onDrop(event){
-    event.preventDefault();
-    event.stopPropagation();
+    // event.preventDefault();
+    // event.stopPropagation();
     $(".canvas-container").removeClass("dragging");
     addEntity(drag_drop.type);
 }

@@ -1,71 +1,48 @@
 /*jshint esversion: 6 */
 
-function parseChain(chain){
-    var actions = chain.split("#");
-    console.dir(actions);
-    $.each(actions, function(i, action){
-        alert(action);
-        parseAction(action);
+function parseChain(chain_s){
+    var chain = [];
+    var actions_s = chain_s.split("#");
+    console.dir(actions_s);
+    $.each(actions_s, function(i, action_s){
+        console.log(action_s);
+        chain = chain.concat(parseAction(action_s));
     });
+    robot.execute(chain);
 }
 
-function parseAction(action){
-    var verb = action.split("(", 1)[0];
-    var args = action.substring(action.indexOf("(")+1, action.indexOf(")")).split(",");
-    var args_list = [];
-    $.each(args, function(i, arg){
-        var param = arg.split("|")[0];
-        var entity = arg.split("|")[1];
-        args_list[i] = {
-            arg: {
-                key: param.split(":", 1)[0],
-                value: param.split("\"")[1]
-            },
-            entity: {
-                    key: entity.split(":", 1)[0],
-                    value: entity.split("\"")[1].split("[")[0]
-                }
+function parseAction(action_s){
+    var action_name = action_s.substring(0, action_s.indexOf("("));
+    var args_s = action_s.substring(action_s.indexOf("(")+1, action_s.indexOf(")")).split(",");
+    var args = {};
+    $.each(args_s, function(i, arg_s){
+        var param_s = arg_s.split("|", 1)[0];
+        var entity_s = arg_s.split("|")[1];
+        var arg = {
+            value: param_s.split("\"")[1]
         };
+        if(entity_s)
+            arg.entity = {
+                key: entity_s.split(":")[0],
+                value: entity_s.split("\"")[1].split("[")[0]
+            };
+        args[param_s.split(":")[0]] = arg;
     });
-    console.dir(args_list);
-    switch(verb){
-        case "MOTION":
-            MOTION(args_list);
-            break;
-        case "TAKING":
-            break;
-        default:
-            alert("Action not recognised!", 3000, "red darken-4");
-    }
+    console.dir(args);
+    if(robot.hasAction(action_name))
+        return robot[action_name](args);
+    else
+        return () => (robot.say("I don't know what is "+action_name+"...", false, "error"));
 }
 
-function MOTION(params){
-    if(params[0].arg.key === "goal"){
-        if(existsAtom(params[0].entity.value))
-            move(getEntityByAtom(params[0].entity.value));
-        else
-            robot.say(params[0].entity.value+" not found", false, "error");
-    }
-}
 
-function move(goal){
-    var pos = goal.getCoordinate();
-    robot.move({top: pos.y, left: pos.x});
-}
+function getOverlappedArgs(args, agent){
+    var sub_actions = []
+    if(args.hasOwnProperty("source") && args.goal.hasOwnProperty("entity"))
+        sub_actions.push(() => (agent.move(getEntityByAtom(args.source.entity.value).getCoordinate())));
+    if(args.hasOwnProperty("theme") && args.goal.hasOwnProperty("entity"))
+        sub_actions.push(() => (agent.move(getEntityByAtom(args.theme.entity.value).getCoordinate())));
+    if(args.hasOwnProperty("goal") && args.goal.hasOwnProperty("entity"))
+        sub_actions.push(() => (agent.move(getEntityByAtom(args.theme.entity.value).getCoordinate())));
 
-function getEntityFromName(str){
-    var r;
-    $.each(entities, function(i, entity){
-        if(searchEntity(str, entity))
-            r = entity;
-    });
-    return r;
-}
-
-function searchEntity(where, what){
-    var atom = where.indexOf(what.atom) >= 0;
-    var type = where.indexOf(what.typology.type) >= 0;
-    var pref = where.indexOf(what.typology.preferredLexicalReference) >= 0;
-    // alert(atom+" "+type+" "+pref+" -> "+ (atom || type || pref), 7000);
-    return (atom || type || pref);
 }
