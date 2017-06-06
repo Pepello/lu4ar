@@ -12,6 +12,34 @@ function snapToGrid(options){
         left: Math.round(options.target.left / grid) * grid,
         top: Math.round(options.target.top / grid) * grid
     });
+    highlightIntersection(options);
+}
+
+function drawBoundingRects(){
+    var objs = entities.concat(robot);
+    if(objs.length){
+        canvas.contextContainer.strokeStyle = 'red';
+        $.each(objs, function(i, obj){
+            var bound = obj.drawable.getBoundingRect();
+            canvas.contextContainer.strokeRect(
+                bound.left + 0.5,
+                bound.top + 0.5,
+                bound.width,
+                bound.height
+            );
+        });
+    }
+}
+
+function highlightIntersection(options){
+    var objs = entities.concat(robot);
+    if(objs.length){
+        options.target.setCoords();
+        $.each(objs, function(i, obj) {
+          if (obj.drawable === options.target) return;
+          obj.drawable.setOpacity(options.target.intersectsWithObject(obj.drawable) ? 0.1 : 1);
+        });
+    }
 }
 
 function initCanvas(){

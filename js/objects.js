@@ -78,10 +78,15 @@ class Entity extends Typology{
     getHeight(){
         return this.drawable.height;
     }
-    getAnchorPoint(coord){
-        var _coord = this.getCoordinate();
-        var dir_x = _coord.x - coord.x > 0 ? 0 : 1;
-        return new Coordinate(_coord.x + dir_x*this.getWidth(), _coord.y + this.getHeight()*.5, 0, 0);
+    getCenter(){
+        var coord = this.getCoordinate();
+        return new Coordinate(coord.x + this.getWidth()*0.5, coord.y + this.getHeight()*0.5, 0, 0);
+    }
+    getAnchorPoint(_center){
+        var coord = this.getCoordinate();
+        var center = this.getCenter();
+        var dir_x = center.x - _center.x > 0 ? 0 : 1;
+        return new Coordinate(coord.x + dir_x*this.getWidth(), center.y, 0, 0);
     }
 
     load(){
@@ -116,23 +121,26 @@ class Entity extends Typology{
 class Robot extends Entity{
     constructor(_atom, _type, _plr, _alr, _img, _slot){
         super(_atom, _type, _plr, _alr, _img, _slot);
-        this.duration = 2500;
     }
 
     hasAction(action){
         return action in this;
     }
 
-    getArrivalPoint(anchor){
-        var _coord = this.getCoordinate();
-        var dir_x = anchor.x - _coord.x > 0 ? -1 : 0;
-        return new Coordinate(anchor.x + dir_x*this.getWidth(), anchor.y - this.getHeight()*.5, 0, 0);
+    getArrivalPoint(anchor, _center){
+        var center = this.getCenter();
+        var dir_x = _center.x - center.x > 0 ? -1 : 0;
+        return new Coordinate(anchor.x + dir_x*this.getWidth(), anchor.y - this.getHeight()*0.5, 0, 0);
     }
 
     say(message, success = true, icon = "android"){
         var style;
         if(success) style = "lime"; else style = "red darken-2";
-        alert("<i class='material-icons prev'>"+icon+"</i>"+message, this.duration, style+" rounded");
+        return new Promise(function(resolve, reject){
+            alert("<i class='material-icons prev'>"+icon+"</i>"+message, 3000, style+" rounded", function(){
+                resolve(true);
+            });
+        });
     }
 
     greet(){
@@ -147,52 +155,94 @@ class Robot extends Entity{
         });
     }
 
-    move(_coord){
-        var coord = this.getArrivalPoint(_coord);
-        this.animate(coord.toFabric());
+    queuedAnimation(props, _duration = 2500){
+        var _this = this;
+        return new Promise(function(resolve, reject){
+            _this.drawable.animate(props, {
+                duration: _duration,
+                onChange: canvas.renderAll.bind(canvas),
+                onComplete: function(){
+                    canvas.renderAll();
+                    resolve(true);
+                },
+                easing: fabric.util.ease.easeInOutQuart
+            });
+        });
     }
 
-    execute(chain){
-        var runningDuration = 0;
-        for (var i = 0; i < chain.length; i++){
-            window.setTimeout(chain[i], runningDuration);
-            runningDuration += this.duration;
+    move(_coord){
+        return this.queuedAnimation(_coord.toFabric(), 3000);
+    }
+
+    take(obj){
+        var _this = this;
+        return new Promise(function(resolve, reject){
+            if(_this.drawable.intersectsWithObject(obj.drawable))
+                _this.say("I'm near "+obj.atom).then(function(response){
+                    resolve();
+                });
+            else
+                _this.say("I'm far from "+obj.atom, false).then(function(response){
+                    reject(false);
+                });
+
+        });
+    }
+
+    executeAction(args, action_name){
+        var chain = Promise.resolve();
+        var agent = this;
+        if(args.hasOwnProperty("source")){
+            var source = args.source;
+            if(source.hasOwnProperty("entity")){
+                chain = chain.then(function(response){
+                    return agent.move(agent.getArrivalPoint(source.entity.value.getAnchorPoint(agent.getCenter()), source.entity.value.getCenter()));
+                });
+            }
+            else{
+                chain = chain.then(function(response){
+                    return agent.say("I don't know where is \""+source.entity.key+"\"...", false);
+                });
+                return chain;
+            }
         }
+        if(args.hasOwnProperty("theme")){
+            var theme = args.theme;
+            if(theme.hasOwnProperty("entity")){
+                chain = chain.then(function(response){
+                    return agent[action_name](args);
+                });
+            }
+        }
+        if(args.hasOwnProperty("goal")){
+            var goal = args.goal;
+            if(goal.hasOwnProperty("entity")){
+                chain = chain.then(function(response){
+                    return agent.move(agent.getArrivalPoint(goal.entity.value.getAnchorPoint(agent.getCenter()), goal.entity.value.getCenter()));
+                });
+            }
+            else{
+                chain = chain.then(function(response){
+                    return agent.say("I don't know where is \""+goal.entity.key+"\"...", false);
+                });
+                return chain;
+            }
+        }
+        return chain;
     }
 
     MOTION(args){
-        var queue = [];
-        if(args.hasOwnProperty("goal") && args.goal.hasOwnProperty("entity"))
-            queue.push(() => (this.move(getEntityByAtom(args.goal.entity.value).getAnchorPoint(this.getCoordinate()))));
-        else if(args.hasOwnProperty("goal"))
-            queue.push(() => (this.say("I don't know where is \""+args.goal.value+"\"...", false)));
-        else{
-            queue.push(() => (this.say("I don't know where to go...", false)));
+        if(args.hasOwnProperty("goal") && args.hasOwnProperty("source")){
+            return this.take(args.theme.entity.value);
         }
-        return queue;
+        else if(!args.hasOwnProperty("source"))
+            return this.say("Tell me where to find the "+args.theme.entity.key, false);
+        else
+            return this.say("Tell me where to bring the "+args.theme.entity.key, false);
     }
 
     BRINGING(args){
-        var queue = [];
-        if(args.hasOwnProperty("source") && args.goal.hasOwnProperty("entity")){
-            queue.push(() => (this.move(getEntityByAtom(args.source.entity.value).getCoordinate())));
-            if(args.hasOwnProperty("theme") && args.theme.hasOwnProperty("entity")){
-                queue.push(() => (this.move(getEntityByAtom(args.theme.entity.value).getCoordinate())));
-                queue.push(() => (this.take(getEntityByAtom(args.theme.entity.value).getAnchorPoint())));
-            }
-            else if(args.hasOwnProperty("theme"))
-                queue.push(() => (this.say("I don't know what is \""+args.theme.value+"\"...", false)));
-            else
-                queue.push(() => (this.say("I don't know what take...", false)));
-        }
-        else if(args.hasOwnProperty("theme") && args.theme.hasOwnProperty("entity"))
-            queue.push(() => (this.move(getEntityByAtom(args.theme.entity.value).getCoordinate())));
-        else if(args.hasOwnProperty("source"))
-            queue.push(() => (this.say("I don't know where is \""+args.source.value+"\"...", false)));
-        else{
-            queue.push(() => (this.say("I don't know where to go...", false)));
-        }
-        return queue;
+        return this.MOTION(args);
     }
 }
 
@@ -228,6 +278,7 @@ function addEntity(type, _atom = ""){
     var obj = new Entity(atom, typologies[type]);
     entities.push(obj);
     setEntityByAtom(atom, entities.length - 1);
+    return obj;
 }
 
 function initRobot(){
@@ -243,7 +294,26 @@ function initTypologies(){
     typologies["elegant chair"] = new Typology("elegant chair", "chair", [], {name: "chair-2", type: "svg"}, 2);
 }
 
+function initMap(){
+    var book = addEntity("book");
+    book.drawable.set({
+        top: 300,
+        left: 500
+    });
+    var table = addEntity("table");
+    table.drawable.set({
+        top: 200,
+        left: 500
+    });
+    var chair = addEntity("chair");
+    chair.drawable.set({
+        top: 500,
+        left: 200
+    });
+}
+
 function initObjects(){
-    initRobot();
     initTypologies();
+    // initMap();
+    initRobot();
 }

@@ -8,7 +8,7 @@ var hypotheses = [];
 var entities = [];
 var atoms_to_entities = {};
 
-var port = 4201;
+var port = 4200;
 var grid = 25;
 var block = grid*2;
 var paths = {
@@ -29,7 +29,6 @@ function sendCommand(f = undefined, opt = {}){
     },
     success: function(resp){
         last_chain = resp;
-        // alert(last_chain);
         parseChain(resp);
         if(f !== undefined){
             f(opt);
@@ -97,8 +96,8 @@ function toButton(){
     $("#mic i").removeClass("active");
 }
 
-function alert(msg, time = 3000, style = ""){
-    Materialize.toast(msg, time, style);
+function alert(msg, time = 3000, style = "", callback = function(){}){
+    Materialize.toast(msg, time, style, callback);
 }
 
 function error(msg, time = 3500){
@@ -128,5 +127,8 @@ $(function(){
         e.preventDefault();
     });
     $('ul.tabs').tabs();
+
+    canvas.on('after:render', drawBoundingRects);
+
 
 });
