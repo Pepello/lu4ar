@@ -126,3 +126,14 @@ function initSpeechRecognition(){
     sr.onend = srStop;
     sr.onresult = srOnResult;
 }
+
+function initSpeechSynthesis(){
+    ss = window.speechSynthesis;
+    ss.voicesLoaded = new Promise(function(resolve, reject){
+        window.speechSynthesis.onvoiceschanged = function(){
+            resolve(window.speechSynthesis.getVoices().filter(function(voice){
+                return voice.lang == lang;
+            })[0]);
+        };
+    });
+}

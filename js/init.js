@@ -1,5 +1,5 @@
 /*jshint esversion: 6 */
-var canvas, sr;
+var canvas, sr, ss;
 var robot;
 var last_chain_s;
 
@@ -11,6 +11,7 @@ var atoms_to_entities = {};
 var port = 4200;
 var grid = 25;
 var block = grid*2;
+var lang = "en-US";
 var paths = {
     res: "res",
     icons: "res/icons"
@@ -107,6 +108,7 @@ function error(msg, time = 3500){
 $(function(){
 
     initSpeechRecognition();
+    initSpeechSynthesis();
     initObjects();
     initCanvas();
     fillTypologiesCollection();
@@ -128,7 +130,7 @@ $(function(){
     });
     $('ul.tabs').tabs();
 
-    canvas.on('after:render', drawBoundingRects);
+    // canvas.on('after:render', drawBoundingRects);
 
 
 });

@@ -8,6 +8,31 @@ class Coordinate{
         this.angle = _angle;
     }
 
+    add(_coord){
+        return new Coordinate(this.x + _coord.x, this.y + _coord.y, this.z + _coord.z, 0);
+    }
+
+    sub(_coord){
+        return new Coordinate(this.x - _coord.x, this.y - _coord.y, this.z - _coord.z, 0);
+    }
+
+    mul(s){
+        return new Coordinate(this.x*s, this.y*s, this.z*s, this.angle);
+    }
+
+    scalar(_coord){
+        return this.x*_coord.x + this.y*_coord.y + this.z*_coord.z;
+    }
+
+    norm(){
+        return Math.sqrt(this.scalar(this));
+    }
+
+    length(_coord){
+        var v = _coord.sub(this);
+        return v.norm();
+    }
+
     toJSON(){
         return {
             x: this.x.toString(),
@@ -89,25 +114,40 @@ class Entity extends Typology{
         return new Coordinate(coord.x + dir_x*this.getWidth(), center.y, 0, 0);
     }
 
+    fabric(name, params){
+        this.loaded.then(function(drawable){
+            switch (name) {
+                case "set":
+                    drawable[name](params);
+                    drawable.setCoords();
+                    break;
+            }
+        });
+    }
+
     load(){
         var _this = this;
-        if(this.type == "svg")
-            fabric.loadSVGFromURL(this.getUrl(), function(objs, opts){
+        this.loaded = new Promise(function(resolve, reject){
+            if(_this.type == "svg")
+            fabric.loadSVGFromURL(_this.getUrl(), function(objs, opts){
                 opts.lockRotation = opts.lockScalingX = opts.lockScalignY = opts.lockScalingFlip = true;
                 _this.drawable = new fabric.PathGroup(objs, opts);
                 _this.drawable.scaleToWidth(block*_this.slot);
                 canvas.add(_this.drawable);
+                resolve(_this.drawable);
             });
-        else
-            fabric.Image.fromURL(this.getUrl(), function(obj){
+            else
+            fabric.Image.fromURL(_this.getUrl(), function(obj){
                 obj.lockRotation = obj.lockScalingX = obj.lockScalingY = obj.lockScalingFlip = true;
                 _this.drawable = obj;
                 canvas.add(obj);
+                resolve(_this.drawable);
             },
             {
                 width: _this.slot*block,
                 height: _this.slot*block
             });
+        });
     }
 
     toJSON(){
@@ -121,6 +161,17 @@ class Entity extends Typology{
 class Robot extends Entity{
     constructor(_atom, _type, _plr, _alr, _img, _slot){
         super(_atom, _type, _plr, _alr, _img, _slot);
+        this.loadSpeechSynthesis();
+    }
+
+    loadSpeechSynthesis(){
+        var _this = this;
+        this.utterance = new SpeechSynthesisUtterance("Hi I'm "+this.atom);
+        this.utterance.lang = lang;
+        this.utterance.rate = .85;
+        ss.voicesLoaded.then(function(voice){
+            _this.utterance.voice = voice;
+        });
     }
 
     hasAction(action){
@@ -133,13 +184,24 @@ class Robot extends Entity{
         return new Coordinate(anchor.x + dir_x*this.getWidth(), anchor.y - this.getHeight()*0.5, 0, 0);
     }
 
-    say(message, success = true, icon = "android"){
+    sayText(message, success = true, icon = "android"){
         var style;
         if(success) style = "lime"; else style = "red darken-2";
         return new Promise(function(resolve, reject){
             alert("<i class='material-icons prev'>"+icon+"</i>"+message, 3000, style+" rounded", function(){
                 resolve(true);
             });
+        });
+    }
+
+    say(message){
+        var _this = this;
+        return new Promise(function(resolve, reject){
+            _this.utterance.text = message;
+            _this.utterance.onend = function(){
+                resolve(true);
+            };
+            ss.speak(_this.utterance);
         });
     }
 
@@ -165,15 +227,30 @@ class Robot extends Entity{
                     canvas.renderAll();
                     resolve(true);
                 },
-                easing: fabric.util.ease.easeInOutQuart
+                easing: fabric.util.ease.easeInOutCubic
             });
         });
     }
 
     move(_coord){
-        return this.queuedAnimation(_coord.toFabric(), 3000);
+        var time = (this.getCoordinate().length(_coord)*0.01)*1000/2;
+        return this.queuedAnimation(_coord.toFabric(), time);
     }
 
+    // take(obj){
+    //     var _this = this;
+    //     return new Promise(function(resolve, reject){
+    //         if(_this.drawable.intersectsWithObject(obj.drawable))
+    //             _this.say("I'm near "+obj.atom).then(function(response){
+    //                 resolve();
+    //             });
+    //         else
+    //             _this.say("I'm far from "+obj.atom).then(function(response){
+    //                 reject(false);
+    //             });
+    //
+    //     });
+    // }
     take(obj){
         var _this = this;
         return new Promise(function(resolve, reject){
@@ -182,7 +259,7 @@ class Robot extends Entity{
                     resolve();
                 });
             else
-                _this.say("I'm far from "+obj.atom, false).then(function(response){
+                _this.say("I'm far from "+obj.atom).then(function(response){
                     reject(false);
                 });
 
@@ -196,6 +273,8 @@ class Robot extends Entity{
             var source = args.source;
             if(source.hasOwnProperty("entity")){
                 chain = chain.then(function(response){
+                    return agent.say("I'm going to the "+source.entity.key);
+                }).then(function(response){
                     return agent.move(agent.getArrivalPoint(source.entity.value.getAnchorPoint(agent.getCenter()), source.entity.value.getCenter()));
                 });
             }
@@ -218,12 +297,14 @@ class Robot extends Entity{
             var goal = args.goal;
             if(goal.hasOwnProperty("entity")){
                 chain = chain.then(function(response){
+                    return agent.say("I'm going to the "+goal.entity.key);
+                }).then(function(response){
                     return agent.move(agent.getArrivalPoint(goal.entity.value.getAnchorPoint(agent.getCenter()), goal.entity.value.getCenter()));
                 });
             }
             else{
                 chain = chain.then(function(response){
-                    return agent.say("I don't know where is \""+goal.entity.key+"\"...", false);
+                    return agent.say("I don't know where is \""+goal.value+"\"...", false);
                 });
                 return chain;
             }
@@ -295,25 +376,13 @@ function initTypologies(){
 }
 
 function initMap(){
-    var book = addEntity("book");
-    book.drawable.set({
-        top: 300,
-        left: 500
-    });
-    var table = addEntity("table");
-    table.drawable.set({
-        top: 200,
-        left: 500
-    });
-    var chair = addEntity("chair");
-    chair.drawable.set({
-        top: 500,
-        left: 200
-    });
+    addEntity("table").fabric("set",{top: 300, left: 500});
+    addEntity("book").fabric("set",{top: 300, left: 500});
+    addEntity("chair").fabric("set",{top: 600, left: 100});
 }
 
 function initObjects(){
     initTypologies();
-    // initMap();
+    initMap();
     initRobot();
 }

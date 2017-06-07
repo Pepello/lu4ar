@@ -31,6 +31,8 @@ function parseAction(action_s){
     console.log(action_name+": ", args);
     if(robot.hasAction(action_name))
         return robot.executeAction(args, action_name);
+    else if(action_name !== "NO FRAME")
+        return robot.say("I don't know what is "+action_name);
     else
-        return robot.say("I don't know what is "+action_name+"...", false);
+        return robot.say("I have not been programmed for this.... I don't understand");
 }
