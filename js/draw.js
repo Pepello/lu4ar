@@ -12,7 +12,7 @@ function snapToGrid(options){
         left: Math.round(options.target.left / grid) * grid,
         top: Math.round(options.target.top / grid) * grid
     });
-    highlightIntersection(options);
+    // highlightIntersection(options);
 }
 
 function drawBoundingRects(){

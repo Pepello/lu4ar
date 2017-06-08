@@ -107,11 +107,16 @@ class Entity extends Typology{
         var coord = this.getCoordinate();
         return new Coordinate(coord.x + this.getWidth()*0.5, coord.y + this.getHeight()*0.5, 0, 0);
     }
-    getAnchorPoint(_center){
+    getFrontalPoint(_center){
         var coord = this.getCoordinate();
         var center = this.getCenter();
-        var dir_x = center.x - _center.x > 0 ? 0 : 1;
+        var dir_x = center.sub(_center).x > 0 ? 0 : 1;
         return new Coordinate(coord.x + dir_x*this.getWidth(), center.y, 0, 0);
+    }
+    isNear(obj, dist){
+        var _front = obj.getFrontalPoint(this.getCenter());
+        var front = this.getFrontalPoint(obj.getCenter());
+        return front.length(_front) <= dist;
     }
 
     fabric(name, params){
@@ -158,6 +163,13 @@ class Entity extends Typology{
     }
 }
 
+class Agent{
+    constructor(_atom, _type, _plr, _alr, _img, _slot){
+        super(_atom, _type, _plr, _alr, _img, _slot);
+        this.loadSpeechSynthesis();
+    }
+}
+
 class Robot extends Entity{
     constructor(_atom, _type, _plr, _alr, _img, _slot){
         super(_atom, _type, _plr, _alr, _img, _slot);
@@ -166,11 +178,12 @@ class Robot extends Entity{
 
     loadSpeechSynthesis(){
         var _this = this;
-        this.utterance = new SpeechSynthesisUtterance("Hi I'm "+this.atom);
+        this.utterance = new SpeechSynthesisUtterance();
         this.utterance.lang = lang;
         this.utterance.rate = .85;
         ss.voicesLoaded.then(function(voice){
             _this.utterance.voice = voice;
+            _this.greet();
         });
     }
 
@@ -180,7 +193,7 @@ class Robot extends Entity{
 
     getArrivalPoint(anchor, _center){
         var center = this.getCenter();
-        var dir_x = _center.x - center.x > 0 ? -1 : 0;
+        var dir_x = _center.sub(center).x > 0 ? -1 : 0;
         return new Coordinate(anchor.x + dir_x*this.getWidth(), anchor.y - this.getHeight()*0.5, 0, 0);
     }
 
@@ -251,36 +264,42 @@ class Robot extends Entity{
     //
     //     });
     // }
-    take(obj){
+    take(obj, source){
         var _this = this;
         return new Promise(function(resolve, reject){
-            if(_this.drawable.intersectsWithObject(obj.drawable))
-                _this.say("I'm near "+obj.atom).then(function(response){
-                    resolve();
-                });
-            else
-                _this.say("I'm far from "+obj.atom).then(function(response){
-                    reject(false);
-                });
-
+            var takeable = _this.isNear(obj, _this.getWidth());
+            var error = "";
+            if(takeable){
+                _this.say("I'm near to the "+obj.type+" enough");
+                resolve(true);
+            }
+            else{
+                _this.say("I'm not near to the "+obj.type+" enough");
+                reject();
+            }
         });
     }
 
     executeAction(args, action_name){
         var chain = Promise.resolve();
-        var agent = this;
+        var _this = this;
         if(args.hasOwnProperty("source")){
             var source = args.source;
             if(source.hasOwnProperty("entity")){
-                chain = chain.then(function(response){
-                    return agent.say("I'm going to the "+source.entity.key);
-                }).then(function(response){
-                    return agent.move(agent.getArrivalPoint(source.entity.value.getAnchorPoint(agent.getCenter()), source.entity.value.getCenter()));
-                });
+                if(!_this.isNear(source.entity.value,0))
+                    chain = chain.then(function(response){
+                        return _this.say("I'm going to the "+source.entity.key);
+                    }).then(function(response){
+                        return _this.move(_this.getArrivalPoint(source.entity.value.getFrontalPoint(_this.getCenter()), source.entity.value.getCenter()));
+                    });
+                else
+                    chain = chain.then(function(response){
+                        return _this.say("I'm near the "+source.entity.key+" yet");
+                    });
             }
             else{
                 chain = chain.then(function(response){
-                    return agent.say("I don't know where is \""+source.entity.key+"\"...", false);
+                    return _this.say("I don't know where is \""+source.entity.key+"\"...");
                 });
                 return chain;
             }
@@ -289,22 +308,33 @@ class Robot extends Entity{
             var theme = args.theme;
             if(theme.hasOwnProperty("entity")){
                 chain = chain.then(function(response){
-                    return agent[action_name](args);
+                    return _this[action_name](args);
                 });
+            }
+            else{
+                chain = chain.then(function(response){
+                    return _this.say("I don't know where is \""+theme.entity.key+"\"...");
+                });
+                return chain;
             }
         }
         if(args.hasOwnProperty("goal")){
             var goal = args.goal;
             if(goal.hasOwnProperty("entity")){
-                chain = chain.then(function(response){
-                    return agent.say("I'm going to the "+goal.entity.key);
-                }).then(function(response){
-                    return agent.move(agent.getArrivalPoint(goal.entity.value.getAnchorPoint(agent.getCenter()), goal.entity.value.getCenter()));
-                });
+                if(!_this.isNear(goal.entity.value, 0))
+                    chain = chain.then(function(response){
+                        return _this.say("I'm going to the "+goal.entity.key);
+                    }).then(function(response){
+                        return _this.move(_this.getArrivalPoint(goal.entity.value.getFrontalPoint(_this.getCenter()), goal.entity.value.getCenter()));
+                    });
+                else
+                    chain = chain.then(function(response){
+                        return _this.say("I'm near the "+goal.entity.key+" yet");
+                    });
             }
             else{
                 chain = chain.then(function(response){
-                    return agent.say("I don't know where is \""+goal.value+"\"...", false);
+                    return _this.say("I don't know where is \""+goal.value+"\"...");
                 });
                 return chain;
             }
@@ -320,6 +350,15 @@ class Robot extends Entity{
             return this.say("Tell me where to find the "+args.theme.entity.key, false);
         else
             return this.say("Tell me where to bring the "+args.theme.entity.key, false);
+    }
+
+    TAKING(args){
+        if(args.hasOwnProperty("source")){
+            return this.take(args.theme.entity.value, args.source.entity.value);
+        }
+        else{
+            return this.take(args.theme.entity.value);
+        }
     }
 
     BRINGING(args){
@@ -364,7 +403,6 @@ function addEntity(type, _atom = ""){
 
 function initRobot(){
     robot = new Robot("R2D2", "robot", "robot", ["android", "automa"], {name: "android", type: "png"}, 2);
-    robot.greet();
 }
 
 function initTypologies(){

@@ -11,7 +11,7 @@ var atoms_to_entities = {};
 var port = 4200;
 var grid = 25;
 var block = grid*2;
-var lang = "en-US";
+var lang = "en-GB";
 var paths = {
     res: "res",
     icons: "res/icons"

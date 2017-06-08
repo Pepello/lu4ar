@@ -133,7 +133,7 @@ function initSpeechSynthesis(){
         window.speechSynthesis.onvoiceschanged = function(){
             resolve(window.speechSynthesis.getVoices().filter(function(voice){
                 return voice.lang == lang;
-            })[0]);
+            })[1]);
         };
     });
 }
