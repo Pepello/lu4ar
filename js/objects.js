@@ -163,12 +163,13 @@ class Entity extends Typology{
     }
 }
 
-class Agent{
-    constructor(_atom, _type, _plr, _alr, _img, _slot){
-        super(_atom, _type, _plr, _alr, _img, _slot);
-        this.loadSpeechSynthesis();
-    }
-}
+// class Agent{
+//     constructor(_atom, _type, _plr, _alr, _img, _slot){
+//         this.self = new Entity(_atom, _type, _plr, _alr, _img, _slot);
+//         this.obj =
+//         this.loadSpeechSynthesis();
+//     }
+// }
 
 class Robot extends Entity{
     constructor(_atom, _type, _plr, _alr, _img, _slot){
