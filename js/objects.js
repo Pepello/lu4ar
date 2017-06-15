@@ -163,6 +163,13 @@ class Entity extends Typology{
     }
 }
 
+class EntityGroup{
+    constructor(_master_or_components, _n_max_components){
+        if(_master_or_components instanceof Entity)
+        this.entities = [_master];
+    }
+}
+
 // class Agent{
 //     constructor(_atom, _type, _plr, _alr, _img, _slot){
 //         this.self = new Entity(_atom, _type, _plr, _alr, _img, _slot);
