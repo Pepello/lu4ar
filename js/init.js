@@ -125,6 +125,7 @@ $(function(){
         if($("#command").val()){
             setHypotheses([{transcript: $("#command").val(), confidence: "1"}]);
             sendCommand();
+            robot.resetChain();
         }
         e.preventDefault();
     });

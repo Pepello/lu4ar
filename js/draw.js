@@ -20,7 +20,7 @@ function drawBoundingRects(){
     if(objs.length){
         canvas.contextContainer.strokeStyle = 'red';
         $.each(objs, function(i, obj){
-            var bound = obj.drawable.getBoundingRect();
+            var bound = obj.group_drawable.getBoundingRect();
             canvas.contextContainer.strokeRect(
                 bound.left + 0.5,
                 bound.top + 0.5,
@@ -36,8 +36,8 @@ function highlightIntersection(options){
     if(objs.length){
         options.target.setCoords();
         $.each(objs, function(i, obj) {
-          if (obj.drawable === options.target) return;
-          obj.drawable.setOpacity(options.target.intersectsWithObject(obj.drawable) ? 0.1 : 1);
+          if (obj.group_drawable === options.target) return;
+          obj.group_drawable.setOpacity(options.target.intersectsWithObject(obj.group_drawable) ? 0.1 : 1);
         });
     }
 }

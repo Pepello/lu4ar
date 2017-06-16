@@ -1,13 +1,10 @@
 /*jshint esversion: 6 */
 
 function parseChain(chain_s){
-    var chain = Promise.resolve();
     var actions_s = chain_s.split("#");
     $.each(actions_s, function(i, action_s){
         console.log(action_s);
-        chain = chain.then(function(response){
-            return parseAction(action_s);
-        });
+        parseAction(action_s);
     });
 }
 
@@ -30,9 +27,13 @@ function parseAction(action_s){
     });
     console.log(action_name+": ", args);
     if(robot.hasAction(action_name))
-        return robot.executeAction(args, action_name);
+        robot[action_name](args);
     else if(action_name !== "NO FRAME")
-        return robot.say("I don't know what is "+action_name);
+        robot.chain(function(){
+            robot.say("I don't know what is "+action_name);
+        });
     else
-        return robot.say("I have not been programmed for this.... I don't understand");
+        robot.chain(function(){
+            robot.say("I have not been programmed for this.... I don't understand");
+        });
 }
