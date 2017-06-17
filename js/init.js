@@ -3,6 +3,7 @@ var canvas, sr, ss;
 var robot, speaker;
 var last_chain_s;
 
+var maps = {};
 var typologies = {};
 var hypotheses = [];
 var entities = [];
@@ -17,7 +18,8 @@ var paths = {
     icons: "res/icons"
 };
 var drag_drop = {
-    type: ""
+    entity_type: "",
+    map_id: "",
 };
 
 function sendCommand(f = undefined, opt = {}){
@@ -40,11 +42,18 @@ function sendCommand(f = undefined, opt = {}){
 }
 
 function onDragStart(){
-    drag_drop.type = $(this).data("type");
+    console.log($(this).data("id"));
+    if($(this).data("type") !== undefined)
+        drag_drop.entity_type = $(this).data("type");
+    if($(this).data("id") !== undefined)
+        drag_drop.map_id = $(this).data("id").toString();
 }
 
 function onDragEnd(){
-    drag_drop.type = "";
+    drag_drop = {
+        entity_type: "",
+        map_id: "",
+    };
 }
 
 function onDragEnter(event){
@@ -68,7 +77,17 @@ function onDrop(event){
     // event.preventDefault();
     // event.stopPropagation();
     $(".canvas-container").removeClass("dragging");
-    addEntity(drag_drop.type);
+    if(drag_drop.entity_type)
+        addEntity(drag_drop.entity_type);
+    if(drag_drop.map_id){
+        fetchEntitiesByMapId(drag_drop.map_id).then(function(response){
+            resetMap();
+            console.dir(response);
+            $.each(response, function(i, ey){
+                addEntity(ey.type, ey.atom).fabric("set",ey.position);
+            });
+        });
+    }
 }
 
 function fillTypologiesCollection(){
@@ -82,6 +101,19 @@ function fillTypologiesCollection(){
         item.on("dragstart", onDragStart);
         item.on("dragend", onDragEnd);
         $("#objects .collection").append(item);
+    });
+}
+
+function fillMapsCollection(){
+    $.each(maps, function(i, map){
+        var item = $(
+            '<li class="collection-item" draggable="true" data-id="'+map.id+'">'+
+              '<span class="title">'+map.name+'</span>'+
+            '</li>'
+        );
+        item.on("dragstart", onDragStart);
+        item.on("dragend", onDragEnd);
+        $("#maps .collection").append(item);
     });
 }
 
@@ -134,10 +166,16 @@ function setHypotheses(obj){
 
 function addEntity(type, _atom = ""){
     var atom = _atom || type+"_"+entities.length;
-    var obj = new Entity(atom, typologies[type]);
+    var obj = new Entity({atom: atom, type: typologies[type]});
     entities.push(obj);
     setEntityByAtom(atom, entities.length - 1);
     return obj;
+}
+
+function resetMap(){
+    resetCanvas();
+    entities = [];
+    atoms_to_entities = {};
 }
 
 // function initSpeaker(){
@@ -150,36 +188,34 @@ function initAgent(){
     robot = new Agent("R2D2", "robot", "robot", ["android", "automa"], {name: "android", type: "png"}, 2.5);
 }
 
-function initTypologies(){
-    typologies["book"] = new Typology("book", "book", ["volume", "manual"], {name: "book", type: "png"}, 1);
-    typologies["table"] = new Typology("table", "table", ["desk"], {name: "table", type: "svg"}, 3);
-    typologies["tv"] = new Typology("tv", "TV", ["tv", "televisor", "monitor", "screen"], {name: "tv", type: "svg"}, 2, ["off", "on"]);
-    typologies["chair"] = new Typology("chair", "chair", [], {name: "chair-1", type: "svg"}, 2);
-    typologies["elegant chair"] = new Typology("elegant chair", "chair", [], {name: "chair-2", type: "svg"}, 2);
+function initCanvas(){
+    $("#map").attr("width", "1000px");
+    $("#map").attr("height", "1000px");
+    canvas = new fabric.Canvas("map");
+    canvas.setBackgroundColor("#eee");
+    canvas.on('object:moving', snapToGrid);
+    drawGrid("#fff");
 }
 
-function initMap(){
-    addEntity("table").fabric("set",{top: 300, left: 500});
-    addEntity("book").fabric("set",{top: 300, left: 500});
-    addEntity("chair").fabric("set",{top: 600, left: 100});
-    addEntity("tv").fabric("set",{top: 800, left: 800});
-}
-
-function initObjects(){
-    // initSpeaker();
-    initTypologies();
-    initMap();
-    initAgent();
+function initChain(){
+    initSpeechRecognition();
+    initSpeechSynthesis();
+    initCanvas();
+    Promise.all([fetchAllTypologies(), fetchAllMaps()]).then(function(){
+        fillTypologiesCollection();
+        fillMapsCollection();
+        initAgent();
+    }).then(function(){
+        $(".loader").delay(500).fadeOut(1000, function(){
+            $("body").removeClass("loading");
+        });
+    });
 }
 
 $(function(){
 
-    initSpeechRecognition();
-    initSpeechSynthesis();
-    initObjects();
-    initCanvas();
-    fillTypologiesCollection();
 
+    initChain();
     $(".canvas-container").on("dragenter", onDragEnter);
     $(".canvas-container").on("dragover", onDragOver);
     $(".canvas-container").on("dragleave", onDragLeave);
@@ -197,8 +233,5 @@ $(function(){
         e.preventDefault();
     });
     $('ul.tabs').tabs();
-
-    // canvas.on('after:render', drawBoundingRects);
-
 
 });

@@ -8,14 +8,14 @@
     <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="css/materialize.min.css">
     <link rel="stylesheet" href="css/style.css">
-    <!-- <script>
-        var paths = {
-            res: "<?= dirname(__FILE__) . '/res' ?>",
-            icons: "<?= dirname(__FILE__) . '/res/icons' ?>",
-        }
-    </script> -->
   </head>
-  <body class="grey lighten-3">
+  <body class="grey lighten-3 loading">
+    <div class="loader">
+        <h2 class="grey-text text-darken-3">Caricamento dati in corso</h2>
+        <div class="progress">
+            <div class="indeterminate"></div>
+        </div>
+    </div>
     <header>
       <nav class="teal">
         <div class="nav-wrapper">
@@ -43,9 +43,14 @@
         <div class="row">
           <div id="panel" class="col s12 l3 card-panel">
             <ul class="tabs tabs-fixed-width">
+              <li class="tab"><a href="#maps" class="teal-text">Maps</a></li>
               <li class="tab"><a href="#objects" class="active teal-text">Objects</a></li>
               <li class="tab"><a href="#others" class="teal-text">Alternatives</a></li>
             </ul>
+            <div id="maps" class="">
+              <ul class="collection">
+              </ul>
+            </div>
             <div id="objects" class="">
               <ul class="collection">
               </ul>
@@ -105,6 +110,7 @@
     <script src="js/materialize.min.js"></script>
     <script src="js/fabric.min.js"></script>
     <script src="js/objects.js"></script>
+    <script src="js/ajax.js"></script>
     <script src="js/speech.js"></script>
     <script src="js/draw.js"></script>
     <script src="js/animation.js"></script>

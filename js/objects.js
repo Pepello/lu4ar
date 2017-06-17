@@ -56,7 +56,7 @@ class Coordinate{
 }
 
 class Typology{
-    constructor(_type, _plr, _alr, _img, _slot, _states = undefined){
+    constructor(_type, _plr, _alr, _img, _slot, _states = null){
         if(arguments.length > 1){
             this.type = _type;
             this.preferredLexicalReference = _plr;
@@ -91,14 +91,15 @@ class Typology{
 }
 
 class Entity extends Typology{
-    constructor(_atom, _type, _plr, _alr, _img, _slot, _states = undefined){
-        if(arguments.length > 2){
+    constructor(_mixed, _type, _plr, _alr, _img, _slot, _states = null){
+        if(arguments.length > 1){
             super(_type, _plr, _alr, _img, _slot, _states);
+            this.atom = _mixed;
         }
         else{
-            super(_type);
+            super(_mixed.type);
+            this.atom = _mixed.atom;
         }
-        this.atom = _atom;
         this.drawable = undefined;
         this.group_drawable = undefined;
         if(this.states)
@@ -197,6 +198,7 @@ class Entity extends Typology{
                 case "set":
                     drawable[name](params);
                     drawable.setCoords();
+                    canvas.renderAll();
                     break;
                 default:
                     drawable[name](params);

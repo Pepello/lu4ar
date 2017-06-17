@@ -42,11 +42,8 @@ function highlightIntersection(options){
     }
 }
 
-function initCanvas(){
-    $("#map").attr("width", "1000px");
-    $("#map").attr("height", "1000px");
-    canvas = new fabric.Canvas("map");
+function resetCanvas(){
+    canvas.clear();
     canvas.setBackgroundColor("#eee");
-    canvas.on('object:moving', snapToGrid);
     drawGrid("#fff");
 }

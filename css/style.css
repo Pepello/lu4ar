@@ -105,6 +105,29 @@ html{
   font-size: 4vw;
 }
 
+body{
+    position: relative;
+}
+
+.loading{
+    overflow: hidden;
+}
+
+.loading .loader{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: #fafafa;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 20rem;
+    justify-content: center;
+}
+
 main.container{
   margin: 3.5rem auto;
 }
@@ -168,7 +191,7 @@ main.container .card-panel .row{
   margin: 0;
 }
 
-#objects .collection li{
+#objects .collection li, #maps .collection li{
     cursor: move;
 }
 
