@@ -56,13 +56,15 @@ class Coordinate{
 }
 
 class Typology{
-    constructor(_type, _plr, _alr, _img, _slot){
+    constructor(_type, _plr, _alr, _img, _slot, _states = undefined){
         if(arguments.length > 1){
             this.type = _type;
             this.preferredLexicalReference = _plr;
             this.alternativeLexicalReferences = _alr;
             this.img = _img;
             this.slot = _slot;
+            if(_states)
+                this.states = _states;
         }
         else{
             this.type = _type.type;
@@ -70,6 +72,8 @@ class Typology{
             this.alternativeLexicalReferences = _type.alternativeLexicalReferences;
             this.img = _type.img;
             this.slot = _type.slot;
+            if(_type.states)
+                this.states = _type.states;
         }
     }
 
@@ -87,9 +91,9 @@ class Typology{
 }
 
 class Entity extends Typology{
-    constructor(_atom, _type, _plr, _alr, _img, _slot){
+    constructor(_atom, _type, _plr, _alr, _img, _slot, _states = undefined){
         if(arguments.length > 2){
-            super(_type, _plr, _alr, _img, _slot);
+            super(_type, _plr, _alr, _img, _slot, _states);
         }
         else{
             super(_type);
@@ -97,6 +101,8 @@ class Entity extends Typology{
         this.atom = _atom;
         this.drawable = undefined;
         this.group_drawable = undefined;
+        if(this.states)
+            this.actual_state = 0;
         this.load();
     }
 
@@ -128,7 +134,7 @@ class Entity extends Typology{
         return this.group_drawable.contains(obj.group_drawable);
     }
 
-    animate(props, _duration = 2500){
+    animate(props, _duration = 2500, _easing = "easeInOutCubic"){
         var _this = this;
         return new Promise(function(resolve, reject){
             _this.group_drawable.animate(props, {
@@ -138,7 +144,7 @@ class Entity extends Typology{
                     canvas.renderAll();
                     resolve(true);
                 },
-                easing: fabric.util.ease.easeInOutCubic
+                easing: fabric.util.ease[_easing]
             });
         });
     }
@@ -160,34 +166,24 @@ class Entity extends Typology{
             canvas.remove(obj.group_drawable).remove(_this.group_drawable).renderAll();
             canvas.add(group);
             _this.group_drawable = group;
+            _this.group_drawable.lockRotation = _this.group_drawable.lockScalingX = _this.group_drawable.lockScalingY = _this.group_drawable.lockScalingFlip = true;
+            _this.group_drawable.hasControls = false;
             obj.group_drawable = cloned[1];
         });
     }
 
     ungroup(obj){
         var _this = this;
-        // return new Promise(function(resolve, reject){
-        //     var grouped = _this.group_drawable.destroy();
-        //     grouped.item(0).clone(function(clone1){
-        //         grouped.item(1).clone(function(clone2){
-        //             canvas.add(clone1).add(clone2);
-        //             _this.group_drawable = clone1;
-        //             obj.group_drawable = clone2;
-        //             resolve();
-        //         });
-        //     });
-        // });
-        // return obj.clone().then(function(cloned){
-        //     _this.group_drawable.remove(obj.group_drawable);
-        //     canvas.add(cloned);
-        //     obj.group_drawable = cloned;
-        // }) ;
         return new Promise(function(resolve, reject){
             var group = _this.group_drawable.getObjects();
             _this.group_drawable.destroy();
             canvas.remove(_this.group_drawable).renderAll();
             _this.group_drawable = group[0];
             obj.group_drawable = group[1];
+            _this.group_drawable.lockRotation = _this.group_drawable.lockScalingX = _this.group_drawable.lockScalingY = _this.group_drawable.lockScalingFlip = true;
+            _this.group_drawable.hasControls = false;
+            obj.group_drawable.lockRotation = obj.group_drawable.lockScalingX = obj.group_drawable.lockScalingY = obj.group_drawable.lockScalingFlip = true;
+            obj.group_drawable.hasControls = false;
             canvas.add(_this.group_drawable).add(obj.group_drawable);
             resolve();
         });
@@ -205,6 +201,23 @@ class Entity extends Typology{
                 default:
                     drawable[name](params);
                     break;
+            }
+        });
+    }
+
+    changeState(state){
+        var _this = this;
+        return new Promise(function(resolve, reject){
+            if(_this.states && _this.actual_state != _this.states.indexOf(state)){
+                _this.animate({opacity: 0.1}, 500, "easeOutExpo").then(function(){
+                    return _this.animate({opacity: 1}, 500, "easeInExpo");
+                }).then(function(){
+                    _this.actual_state = _this.states.indexOf(state);
+                    resolve(_this.actual_state);
+                });
+            }
+            else{
+                reject();
             }
         });
     }
@@ -286,10 +299,10 @@ class Agent extends Entity{
     }
 
 
-    checkProximity(entity){
+    checkProximity(entity, dist = 0){
         var _this = this;
         return new Promise(function(resolve, reject){
-            resolve(_this.isNear(entity, 0));
+            resolve(_this.isNear(entity, dist));
         });
     }
 
@@ -323,15 +336,17 @@ class Agent extends Entity{
         return this.animate(_coord.toFabric(), time);
     }
 
-    moveToEntity(entity){
+    moveToEntity(entity, dist = 0, check = true){
         var _this = this;
-        return this.checkProximity(entity).then(function(isNear){
+        return this.checkProximity(entity, dist).then(function(isNear){
             if(!isNear)
                 return _this.say("I'm going to the "+entity.type+" named: "+entity.atom).then(function(){
                     return _this.move(_this.getArrivalPoint(entity.getFrontalPoint(_this.getCenter()), entity.getCenter()));
                 });
-            else
+            else if(check)
                 return _this.say("I'm near: "+entity.atom+", yet");
+            else
+                return Promise.resolve();
         });
     }
 
@@ -341,7 +356,7 @@ class Agent extends Entity{
             if(_this.isNear(obj, _this.getWidth())){
                 _this.say("I'm taking the "+obj.type).then(function(){
                     var dir = _this.getFrontalPoint(obj.getCenter()).sub(obj.getCenter());
-                    return obj.animate(obj.getCoordinate().add(dir).toFabric(), 500).then(function(){
+                    return obj.animate(obj.getCoordinate().add(dir).toFabric(), 500, "easeOutElastic").then(function(){
                         return _this.group(obj);
                     });
                 }).then(resolve);
@@ -358,7 +373,7 @@ class Agent extends Entity{
                 _this.ungroup(obj).then(function(){
                     var dir = obj.getCenter().sub(_this.getCenter());
                     return _this.say("I'm leaving the "+obj.type).then(function(){
-                        return obj.animate(obj.getCoordinate().add(dir).toFabric(), 500).then(resolve);
+                        return obj.animate(obj.getCoordinate().add(dir).toFabric(), 500, "easeOutExpo").then(resolve);
                     });
                 });
             }
@@ -374,75 +389,13 @@ class Agent extends Entity{
                 _this.ungroup(obj).then(function(){
                     var dir = source.getCenter().sub(obj.getCenter());
                     return _this.say("I'm leaving the "+obj.type).then(function(){
-                        return obj.animate(obj.getCoordinate().add(dir).toFabric(), 500).then(resolve);
+                        return obj.animate(obj.getCoordinate().add(dir).toFabric(), 500, "easeOutExpo").then(resolve);
                     });
                 });
             }
             else
                 return _this.say("I'm not holding the "+obj.type).then(reject);
         });
-    }
-
-    executeAction(args, action_name){
-        var chain = Promise.resolve();
-        var _this = this;
-        if(args.hasOwnProperty("source")){
-            var source = args.source;
-            if(source.hasOwnProperty("entity")){
-                if(!_this.isNear(source.entity.value,0))
-                    chain = chain.then(function(response){
-                        return _this.say("I'm going to the "+source.entity.key);
-                    }).then(function(response){
-                        return _this.move(_this.getArrivalPoint(source.entity.value.getFrontalPoint(_this.getCenter()), source.entity.value.getCenter()));
-                    });
-                else
-                    chain = chain.then(function(response){
-                        return _this.say("I'm near the "+source.entity.key+" yet");
-                    });
-            }
-            else{
-                chain = chain.then(function(response){
-                    return _this.say("I don't know where is \""+source.entity.key+"\"...");
-                });
-                return chain;
-            }
-        }
-        if(args.hasOwnProperty("theme")){
-            var theme = args.theme;
-            if(theme.hasOwnProperty("entity")){
-                chain = chain.then(function(response){
-                    return _this[action_name](args);
-                });
-            }
-            else{
-                chain = chain.then(function(response){
-                    return _this.say("I don't know where is \""+theme.entity.key+"\"...");
-                });
-                return chain;
-            }
-        }
-        if(args.hasOwnProperty("goal")){
-            var goal = args.goal;
-            if(goal.hasOwnProperty("entity")){
-                if(!_this.isNear(goal.entity.value, 0))
-                    chain = chain.then(function(response){
-                        return _this.say("I'm going to the "+goal.entity.key);
-                    }).then(function(response){
-                        return _this.move(_this.getArrivalPoint(goal.entity.value.getFrontalPoint(_this.getCenter()), goal.entity.value.getCenter()));
-                    });
-                else
-                    chain = chain.then(function(response){
-                        return _this.say("I'm near the "+goal.entity.key+" yet");
-                    });
-            }
-            else{
-                chain = chain.then(function(response){
-                    return _this.say("I don't know where is \""+goal.value+"\"...");
-                });
-                return chain;
-            }
-        }
-        return chain;
     }
 
     MOTION(args){
@@ -522,11 +475,11 @@ class Agent extends Entity{
 
         if(source)
             this.chain(function(){
-                return _this.moveToEntity(source);
+                return _this.moveToEntity(source, _this.getWidth(), false);
             });
         else
             this.chain(function(){
-                return _this.moveToEntity(theme);
+                return _this.moveToEntity(theme, _this.getWidth(), false);
             });
 
         this.chain(function(){
@@ -568,7 +521,52 @@ class Agent extends Entity{
 
         if(goal){
             this.chain(function(){
-                return _this.moveToEntity(goal).then(function(){
+                return _this.moveToEntity(goal, _this.getWidth(), false).then(function(){
+                    return _this.leaveOn(theme, goal);
+                });
+            });
+        }
+        else
+            this.chain(function(){
+                return _this.leave(theme);
+            });
+    }
+
+    PLACING(args){
+        var _this = this;
+        var theme, goal;
+        if(args.hasOwnProperty("theme")){
+            if(args.theme.hasOwnProperty("entity")){
+                theme = args.theme.entity.value;
+            }
+            else{
+                this.chain(function(){
+                    return _this.say("I don't know what is "+args.theme.value);
+                });
+                return;
+            }
+        }
+        else{
+            this.chain(function(){
+                return _this.say("I must know what to place");
+            });
+            return;
+        }
+        if(args.hasOwnProperty("goal")){
+            if(args.goal.hasOwnProperty("entity")){
+                goal = args.goal.entity.value;
+            }
+            else{
+                this.chain(function(){
+                    return _this.say("I don't know where is "+args.goal.value);
+                });
+                return;
+            }
+        }
+
+        if(goal){
+            this.chain(function(){
+                return _this.moveToEntity(goal, _this.getWidth(), false).then(function(){
                     return _this.leaveOn(theme, goal);
                 });
             });
@@ -580,65 +578,160 @@ class Agent extends Entity{
     }
 
     BRINGING(args){
-        return this.MOTION(args);
+        var _this = this;
+        var source, theme, goal;
+        if(args.hasOwnProperty("theme")){
+            if(args.theme.hasOwnProperty("entity")){
+                theme = args.theme.entity.value;
+            }
+            else{
+                this.chain(function(){
+                    return _this.say("I don't know what is "+args.theme.value);
+                });
+                return;
+            }
+        }
+        else{
+            this.chain(function(){
+                return _this.say("I must know what to bring");
+            });
+            return;
+        }
+        if(args.hasOwnProperty("goal")){
+            if(args.goal.hasOwnProperty("entity")){
+                goal = args.goal.entity.value;
+            }
+            else{
+                this.chain(function(){
+                    return _this.say("I don't know where is "+args.goal.value);
+                });
+                return;
+            }
+        }
+        else{
+            this.chain(function(){
+                return _this.say("I must know where to bring the"+theme.type);
+            });
+            return;
+        }
+        if(args.hasOwnProperty("source")){
+            if(args.source.hasOwnProperty("entity")){
+                source = args.source.entity.value;
+            }
+            else{
+                this.chain(function(){
+                    return _this.say("I don't know where is "+args.source.value);
+                });
+                return;
+            }
+        }
+
+        if(source)
+            this.chain(function(){
+                return _this.moveToEntity(source, _this.getWidth(), false);
+            });
+        else
+            this.chain(function(){
+                return _this.moveToEntity(theme, _this.getWidth(), false);
+            });
+
+        this.chain(function(){
+            return _this.take(theme, source).then(function(){
+                return _this.moveToEntity(goal, _this.getWidth(), false);
+            }).then(function(){
+                return _this.leaveOn(theme, goal);
+            });
+        });
     }
-}
 
-function existsAtom(atom){
-    return atoms_to_entities.hasOwnProperty(atom);
-}
+    GIVING(args){
+        var _this = this;
+        var theme, recipient;
+        if(args.hasOwnProperty("theme")){
+            if(args.theme.hasOwnProperty("entity")){
+                theme = args.theme.entity.value;
+            }
+            else{
+                this.chain(function(){
+                    return _this.say("I don't know what is "+args.theme.value);
+                });
+                return;
+            }
+        }
+        else{
+            this.chain(function(){
+                return _this.say("I must know what to give");
+            });
+            return;
+        }
+        if(args.hasOwnProperty("recipient")){
+            if(args.recipient.hasOwnProperty("entity")){
+                recipient = args.recipient.entity.value;
+            }
+            else{
+                this.chain(function(){
+                    return _this.say("I don't know what is "+args.recipient.value);
+                });
+                return;
+            }
+        }
+        else{
+            this.chain(function(){
+                return _this.say("I must know who to give the"+theme.type);
+            });
+            return;
+        }
 
-function getEntityIndexByAtom(atom){
-    return atoms_to_entities[atom];
-}
+        this.chain(function(){
+            return _this.moveToEntity(theme, _this.getWidth(), false).then(function(){
+                return _this.take(theme);
+            }).then(function(){
+                return _this.leaveOn(theme, recipient);
+            });
+        });
 
-function getEntityByAtom(atom){
-    return entities[atoms_to_entities[atom]];
-}
+    }
 
-function setEntityByAtom(atom, entity){
-    atoms_to_entities[atom] = entity;
-}
+    CHANGE_OPERATIONAL_STATE(args){
+        var _this = this;
+        var operational_state, device;
+        if(args.hasOwnProperty("device")){
+            if(args.device.hasOwnProperty("entity")){
+                device = args.device.entity.value;
+            }
+            else{
+                this.chain(function(){
+                    return _this.say("I don't know what is "+args.device.value);
+                });
+                return;
+            }
+        }
+        else{
+            this.chain(function(){
+                return _this.say("I must know which is the device");
+            });
+            return;
+        }
+        if(args.hasOwnProperty("operational_state")){
+            operational_state = args.operational_state.value;
+        }
+        else{
+            this.chain(function(){
+                return _this.say("I must know the operational state");
+            });
+            return;
+        }
 
-function setHypotheses(obj){
-    hypotheses = [];
-    $.each(obj, function(i, r){
-        hypotheses[i] = {
-            transcription: r.transcript,
-            confidence: r.confidence,
-            rank: i
-        };
-    });
-}
-
-function addEntity(type, _atom = ""){
-    var atom = _atom || type+"_"+entities.length;
-    var obj = new Entity(atom, typologies[type]);
-    entities.push(obj);
-    setEntityByAtom(atom, entities.length - 1);
-    return obj;
-}
-
-function initAgent(){
-    robot = new Agent("R2D2", "robot", "robot", ["android", "automa"], {name: "android", type: "png"}, 2);
-}
-
-function initTypologies(){
-    typologies["book"] = new Typology("book", "book", ["volume", "manual"], {name: "book", type: "png"}, 1);
-    typologies["table"] = new Typology("table", "table", ["desk"], {name: "table", type: "svg"}, 3);
-    typologies["tv"] = new Typology("tv", "TV", ["tv", "televisor", "monitor", "screen"], {name: "tv", type: "svg"}, 2);
-    typologies["chair"] = new Typology("chair", "chair", [], {name: "chair-1", type: "svg"}, 2);
-    typologies["elegant chair"] = new Typology("elegant chair", "chair", [], {name: "chair-2", type: "svg"}, 2);
-}
-
-function initMap(){
-    addEntity("table").fabric("set",{top: 300, left: 500});
-    addEntity("book").fabric("set",{top: 300, left: 500});
-    addEntity("chair").fabric("set",{top: 600, left: 100});
-}
-
-function initObjects(){
-    initTypologies();
-    initMap();
-    initAgent();
+        this.chain(function(){
+            return _this.moveToEntity(device, _this.getWidth(), false).then(function(){
+                return _this.say("I'm turning "+operational_state+" the "+device.type);
+            }).then(function(){
+                return device.changeState(operational_state);
+            }).then(function(){
+                return _this.say("Now the "+device.type+" is "+operational_state);
+            }, function(){
+                return _this.say("The "+device.type+" is "+operational_state+", yet");
+            });
+        });
+    }
 }

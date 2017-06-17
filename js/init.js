@@ -1,6 +1,6 @@
 /*jshint esversion: 6 */
 var canvas, sr, ss;
-var robot;
+var robot, speaker;
 var last_chain_s;
 
 var typologies = {};
@@ -105,6 +105,73 @@ function error(msg, time = 3500){
     Materialize.toast(msg, time, "red darken-4");
 }
 
+function existsAtom(atom){
+    return atoms_to_entities.hasOwnProperty(atom);
+}
+
+function getEntityIndexByAtom(atom){
+    return atoms_to_entities[atom];
+}
+
+function getEntityByAtom(atom){
+    return entities[atoms_to_entities[atom]];
+}
+
+function setEntityByAtom(atom, entity){
+    atoms_to_entities[atom] = entity;
+}
+
+function setHypotheses(obj){
+    hypotheses = [];
+    $.each(obj, function(i, r){
+        hypotheses[i] = {
+            transcription: r.transcript,
+            confidence: r.confidence,
+            rank: i
+        };
+    });
+}
+
+function addEntity(type, _atom = ""){
+    var atom = _atom || type+"_"+entities.length;
+    var obj = new Entity(atom, typologies[type]);
+    entities.push(obj);
+    setEntityByAtom(atom, entities.length - 1);
+    return obj;
+}
+
+// function initSpeaker(){
+//     typologies["me"] = new Typology("me", "me", [], {name: "avatar", type: "svg"}, 1);
+//     speaker = addEntity("me");
+//     speaker.fabric("center");
+// }
+
+function initAgent(){
+    robot = new Agent("R2D2", "robot", "robot", ["android", "automa"], {name: "android", type: "png"}, 2.5);
+}
+
+function initTypologies(){
+    typologies["book"] = new Typology("book", "book", ["volume", "manual"], {name: "book", type: "png"}, 1);
+    typologies["table"] = new Typology("table", "table", ["desk"], {name: "table", type: "svg"}, 3);
+    typologies["tv"] = new Typology("tv", "TV", ["tv", "televisor", "monitor", "screen"], {name: "tv", type: "svg"}, 2, ["off", "on"]);
+    typologies["chair"] = new Typology("chair", "chair", [], {name: "chair-1", type: "svg"}, 2);
+    typologies["elegant chair"] = new Typology("elegant chair", "chair", [], {name: "chair-2", type: "svg"}, 2);
+}
+
+function initMap(){
+    addEntity("table").fabric("set",{top: 300, left: 500});
+    addEntity("book").fabric("set",{top: 300, left: 500});
+    addEntity("chair").fabric("set",{top: 600, left: 100});
+    addEntity("tv").fabric("set",{top: 800, left: 800});
+}
+
+function initObjects(){
+    // initSpeaker();
+    initTypologies();
+    initMap();
+    initAgent();
+}
+
 $(function(){
 
     initSpeechRecognition();
@@ -125,7 +192,7 @@ $(function(){
         if($("#command").val()){
             setHypotheses([{transcript: $("#command").val(), confidence: "1"}]);
             sendCommand();
-            robot.resetChain();
+            // robot.resetChain();
         }
         e.preventDefault();
     });
