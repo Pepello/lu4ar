@@ -107,6 +107,7 @@ html{
 
 body{
     position: relative;
+    overflow: hidden;
 }
 
 .loading{
@@ -131,6 +132,7 @@ body{
 #content{
     margin: 0;
     min-width: 100%;
+    overflow: hidden;
 }
 
 #content > .row{
@@ -153,6 +155,7 @@ body{
     margin-left: -1.5rem;
     margin-right: -1.5rem;
     border-top: 1px solid #e0e0e0;
+    overflow: hidden;
 }
 
 #canvas-wrapper{
@@ -212,6 +215,8 @@ body{
 
 #panel .collection{
   margin: 0;
+  overflow: auto;
+  max-height: 600px;
 }
 
 #object .collection li, #agent .collection li, #map .collection li{
