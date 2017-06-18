@@ -208,8 +208,8 @@ function resetMap(){
 // }
 
 function initCanvas(){
-    $("#canvas").attr("width", "1000px");
-    $("#canvas").attr("height", "1000px");
+    $("#canvas").attr("width", $("#canvas-wrapper").width());
+    $("#canvas").attr("height", $(window).height());
     canvas = new fabric.Canvas("canvas");
     canvas.setBackgroundColor("#eee");
     canvas.on('object:moving', snapToGrid);
@@ -232,12 +232,12 @@ function initChain(){
 
 $(function(){
 
-
     initChain();
     $(".canvas-container").on("dragenter", onDragEnter);
     $(".canvas-container").on("dragover", onDragOver);
     $(".canvas-container").on("dragleave", onDragLeave);
     $(".canvas-container").on("drop", onDrop);
+    $("#canvas-wrapper").mousedown(startPan);
     $("#mic").click(srStart);
     $("#form").submit(function(e){
         if(sr.isStarted){

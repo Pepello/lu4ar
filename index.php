@@ -16,14 +16,59 @@
             <div class="indeterminate"></div>
         </div>
     </div>
-    <header>
+    <div id="content" class="container">
+        <div class="row">
+            <div class="card-panel col s3">
+              <div class="row section">
+                <h5 class="col s12 center">LU4R Project</h4>
+                <span class="col s12 center f9">adaptive spoken Language Understanding For Robots</span>
+              </div>
+              <form id="form" class="row valign-wrapper valign-wrapper-med-and-up">
+                <div class="input-field col s12 valign">
+                  <i class="material-icons prefix">keyboard</i>
+                  <input id="command" type="text" class="teal-text" name="command">
+                  <label for="command" >Enter a command</label>
+                </div>
+                <div class="col s12 valign">
+                  <a id="mic" class="center-block btn hoverable"><div>speak it</div><i class="material-icons">mic</i></a>
+                </div>
+              </form>
+              <div id="panel">
+                <ul class="tabs tabs-fixed-width">
+                  <li class="tab"><a href="#map" class="teal-text">Maps</a></li>
+                  <li class="tab"><a href="#agent" class="active teal-text">Agents</a></li>
+                  <li class="tab"><a href="#object" class="teal-text">Objects</a></li>
+                  <li class="tab"><a href="#other" class="teal-text">Alternatives</a></li>
+                </ul>
+                <div id="map">
+                  <ul class="collection">
+                  </ul>
+                </div>
+                <div id="agent">
+                  <ul class="collection">
+                  </ul>
+                </div>
+                <div id="object">
+                  <ul class="collection">
+                  </ul>
+                </div>
+                <div id="other">
+                </div>
+              </div>
+            </div>
+            <div id="canvas-wrapper" class="col s9">
+                <canvas id="canvas"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- <header>
       <nav class="teal">
         <div class="nav-wrapper">
           <a href="#" class="brand-logo center">LU4R - Web Interface</a>
         </div>
       </nav>
-    </header>
-    <main class="container">
+    </header> -->
+    <!-- <main class="container">
       <div id="content" class="card-panel">
         <div class="row section">
           <h4 class="col s12 center">LU4R Project</h4>
@@ -68,8 +113,8 @@
           </div>
         </div>
       </div>
-    </main>
-    <section id="uni-logos" class="row teal lighten-1">
+    </main> -->
+    <!-- <section id="uni-logos" class="row teal lighten-1">
       <div class="col s10 m4 offset-s1 offset-m1">
         <div class="row">
           <a class="col s12" href="#"><img class="responsive-img" src="res/logos/uniroma2_logo.png" alt=""></a>
@@ -110,7 +155,7 @@
         <a class="grey-text text-lighten-4 right" href="#!">More Links</a>
         </div>
       </div>
-    </footer>
+    </footer> -->
     <script src="js/jquery-3.2.0.min.js" charset="utf-8"></script>
     <script src="js/materialize.min.js"></script>
     <script src="js/fabric.min.js"></script>
