@@ -191,11 +191,11 @@ main.container .card-panel .row{
   margin: 0;
 }
 
-#objects .collection li, #maps .collection li{
+#object .collection li, #agent .collection li, #map .collection li{
     cursor: move;
 }
 
-#objects .collection li img{
+#object .collection li img, #agent .collection li img{
     border-radius: 0;
 }
 

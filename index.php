@@ -43,23 +43,28 @@
         <div class="row">
           <div id="panel" class="col s12 l3 card-panel">
             <ul class="tabs tabs-fixed-width">
-              <li class="tab"><a href="#maps" class="teal-text">Maps</a></li>
-              <li class="tab"><a href="#objects" class="active teal-text">Objects</a></li>
-              <li class="tab"><a href="#others" class="teal-text">Alternatives</a></li>
+              <li class="tab"><a href="#map" class="teal-text">Maps</a></li>
+              <li class="tab"><a href="#agent" class="active teal-text">Agents</a></li>
+              <li class="tab"><a href="#object" class="teal-text">Objects</a></li>
+              <li class="tab"><a href="#other" class="teal-text">Alternatives</a></li>
             </ul>
-            <div id="maps" class="">
+            <div id="map">
               <ul class="collection">
               </ul>
             </div>
-            <div id="objects" class="">
+            <div id="agent">
               <ul class="collection">
               </ul>
             </div>
-            <div id="others" class="">
+            <div id="object">
+              <ul class="collection">
+              </ul>
+            </div>
+            <div id="other">
             </div>
           </div>
           <div class="col s12 l9">
-            <canvas id="map"></canvas>
+            <canvas id="canvas"></canvas>
           </div>
         </div>
       </div>

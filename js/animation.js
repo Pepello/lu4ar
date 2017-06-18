@@ -26,14 +26,14 @@ function parseAction(action_s){
         args[param_s.split(":")[0]] = arg;
     });
     console.log(action_name+": ", args);
-    if(robot.hasAction(action_name))
-        robot[action_name](args);
+    if(agent.hasAction(action_name))
+        agent[action_name](args);
     else if(action_name !== "NO FRAME")
-        robot.chain(function(){
-            robot.say("I don't know what is "+action_name);
+        agent.chain(function(){
+            agent.say("I don't know what is "+action_name);
         });
     else
-        robot.chain(function(){
-            robot.say("I have not been programmed for this.... I don't understand");
+        agent.chain(function(){
+            agent.say("I have not been programmed for this.... I don't understand");
         });
 }

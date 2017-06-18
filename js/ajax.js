@@ -1,10 +1,22 @@
 
-function fetchAllTypologies(){
+function fetchAllObjectTypologies(){
     return new Promise(function(resolve, reject){
-        $.get("query.php?request=get_typologies",function(response){
+        $.get("query.php?request=get_typologies&is_agent=0",function(response){
             var res = JSON.parse(response);
             $.each(res, function(i, ty){
-                typologies[ty.type] = new Typology(ty.type, ty.plr, ty.alr, ty.img, ty.slot, ty.states);
+                typologies.object[ty.type] = new Typology(ty.type, ty.plr, ty.alr, ty.img, ty.slot, ty.states);
+            });
+            resolve();
+        }).fail(reject);
+    });
+}
+
+function fetchAllAgentTypologies(){
+    return new Promise(function(resolve, reject){
+        $.get("query.php?request=get_typologies&is_agent=1",function(response){
+            var res = JSON.parse(response);
+            $.each(res, function(i, ty){
+                typologies.agent[ty.type] = new Typology(ty.type, ty.plr, ty.alr, ty.img, ty.slot, ty.states);
             });
             resolve();
         }).fail(reject);
@@ -23,6 +35,14 @@ function fetchAllMaps(){
 function fetchEntitiesByMapId(id){
     return new Promise(function(resolve, reject){
         $.get("query.php?request=get_entities&map_id="+id, function(response){
+            resolve(JSON.parse(response));
+        }).fail(reject);
+    });
+}
+
+function fetchAgentByMapId(id){
+    return new Promise(function(resolve, reject){
+        $.get("query.php?request=get_agent&map_id="+id, function(response){
             resolve(JSON.parse(response));
         }).fail(reject);
     });

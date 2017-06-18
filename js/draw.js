@@ -16,7 +16,7 @@ function snapToGrid(options){
 }
 
 function drawBoundingRects(){
-    var objs = entities.concat(robot);
+    var objs = entities.concat(agent);
     if(objs.length){
         canvas.contextContainer.strokeStyle = 'red';
         $.each(objs, function(i, obj){
@@ -32,7 +32,7 @@ function drawBoundingRects(){
 }
 
 function highlightIntersection(options){
-    var objs = entities.concat(robot);
+    var objs = entities.concat(agent);
     if(objs.length){
         options.target.setCoords();
         $.each(objs, function(i, obj) {

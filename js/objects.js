@@ -210,16 +210,20 @@ class Entity extends Typology{
     changeState(state){
         var _this = this;
         return new Promise(function(resolve, reject){
-            if(_this.states && _this.actual_state != _this.states.indexOf(state)){
-                _this.animate({opacity: 0.1}, 500, "easeOutExpo").then(function(){
-                    return _this.animate({opacity: 1}, 500, "easeInExpo");
-                }).then(function(){
-                    _this.actual_state = _this.states.indexOf(state);
-                    resolve(_this.actual_state);
-                });
+            if(_this.hasOwnProperty('states')){
+                if( _this.actual_state != _this.states.indexOf(state)){
+                    _this.animate({opacity: 0.1}, 500, "easeOutExpo").then(function(){
+                        return _this.animate({opacity: 1}, 500, "easeInExpo");
+                    }).then(function(){
+                        _this.actual_state = _this.states.indexOf(state);
+                        resolve(_this.actual_state);
+                    });
+                }
+                else
+                    reject("same_state");
             }
             else{
-                reject();
+                reject("no_state");
             }
         });
     }
@@ -265,8 +269,13 @@ class Entity extends Typology{
 }
 
 class Agent extends Entity{
-    constructor(_atom, _type, _plr, _alr, _img, _slot){
-        super(_atom, _type, _plr, _alr, _img, _slot);
+    constructor(_mixed, _type, _plr, _alr, _img, _slot){
+        if(arguments.length > 1){
+            super(_mixed, _type, _plr, _alr, _img, _slot);
+        }
+        else{
+            super(_mixed);
+        }
         this.loadSpeechSynthesis();
         this.actions_chain = Promise.resolve();
     }
@@ -731,8 +740,11 @@ class Agent extends Entity{
                 return device.changeState(operational_state);
             }).then(function(){
                 return _this.say("Now the "+device.type+" is "+operational_state);
-            }, function(){
-                return _this.say("The "+device.type+" is "+operational_state+", yet");
+            }, function(error){
+                if(error === "same_state")
+                    return _this.say("The "+device.type+" is "+operational_state+", yet");
+                else if(error === "no_state")
+                    return _this.say("I cant't change the state of the "+device.type);
             });
         });
     }

@@ -1,10 +1,13 @@
 /*jshint esversion: 6 */
 var canvas, sr, ss;
-var robot, speaker;
+var agent, speaker;
 var last_chain_s;
 
 var maps = {};
-var typologies = {};
+var typologies = {
+    agent: {},
+    object: {},
+};
 var hypotheses = [];
 var entities = [];
 var atoms_to_entities = {};
@@ -18,7 +21,8 @@ var paths = {
     icons: "res/icons"
 };
 var drag_drop = {
-    entity_type: "",
+    type: "",
+    sub_type: "",
     map_id: "",
 };
 
@@ -42,16 +46,17 @@ function sendCommand(f = undefined, opt = {}){
 }
 
 function onDragStart(){
-    console.log($(this).data("id"));
+    if($(this).data("pre-type") !== undefined)
+        drag_drop.type = $(this).data("pre-type");
     if($(this).data("type") !== undefined)
-        drag_drop.entity_type = $(this).data("type");
+        drag_drop.sub_type = $(this).data("type");
     if($(this).data("id") !== undefined)
         drag_drop.map_id = $(this).data("id").toString();
 }
 
 function onDragEnd(){
     drag_drop = {
-        entity_type: "",
+        sub_type: "",
         map_id: "",
     };
 }
@@ -77,30 +82,29 @@ function onDrop(event){
     // event.preventDefault();
     // event.stopPropagation();
     $(".canvas-container").removeClass("dragging");
-    if(drag_drop.entity_type)
-        addEntity(drag_drop.entity_type);
+    if(drag_drop.sub_type)
+        if(drag_drop.type === "object")
+            addEntity(drag_drop.sub_type);
+        else if(drag_drop.type === "agent")
+            addAgent(drag_drop.sub_type);
     if(drag_drop.map_id){
-        fetchEntitiesByMapId(drag_drop.map_id).then(function(response){
-            resetMap();
-            console.dir(response);
-            $.each(response, function(i, ey){
-                addEntity(ey.type, ey.atom).fabric("set",ey.position);
-            });
-        });
+        loadMap(drag_drop.map_id);
     }
 }
 
 function fillTypologiesCollection(){
-    $.each(typologies, function(i, typology){
-        var item = $(
-            '<li class="collection-item avatar" draggable="true" data-type="'+typology.type+'">'+
-              '<img src="'+typology.getUrl()+'" alt="'+typology.type+'" class="circle" draggable="false">'+
-              '<span class="title">'+typology.type+'</span>'+
-            '</li>'
-        );
-        item.on("dragstart", onDragStart);
-        item.on("dragend", onDragEnd);
-        $("#objects .collection").append(item);
+    $.each(typologies, function(type, typologies_list){
+        $.each(typologies_list, function(i, typology){
+            var item = $(
+                '<li class="collection-item avatar" draggable="true" data-pre-type="'+type+'" data-type="'+typology.type+'">'+
+                '<img src="'+typology.getUrl()+'" alt="'+typology.type+'" class="circle" draggable="false">'+
+                '<span class="title">'+typology.type+'</span>'+
+                '</li>'
+            );
+            item.on("dragstart", onDragStart);
+            item.on("dragend", onDragEnd);
+            $("#"+type+" .collection").append(item);
+        });
     });
 }
 
@@ -113,7 +117,7 @@ function fillMapsCollection(){
         );
         item.on("dragstart", onDragStart);
         item.on("dragend", onDragEnd);
-        $("#maps .collection").append(item);
+        $("#map .collection").append(item);
     });
 }
 
@@ -166,16 +170,35 @@ function setHypotheses(obj){
 
 function addEntity(type, _atom = ""){
     var atom = _atom || type+"_"+entities.length;
-    var obj = new Entity({atom: atom, type: typologies[type]});
+    var obj = new Entity({atom: atom, type: typologies.object[type]});
     entities.push(obj);
     setEntityByAtom(atom, entities.length - 1);
     return obj;
+}
+
+function addAgent(type, _atom = ""){
+    if(agent)
+        canvas.remove(agent.group_drawable);
+    var atom = _atom || type+"_"+entities.length;
+    agent = new Agent({atom: atom, type: typologies.agent[type]});
+    return agent;
+}
+
+function loadMap(id){
+    return Promise.all([fetchAgentByMapId(id), fetchEntitiesByMapId(id)]).then(function(response){
+        resetMap();
+        addAgent(response[0].type, response[0].atom).fabric("set", response[0].position);
+        $.each(response[1], function(i, ey){
+            addEntity(ey.type, ey.atom).fabric("set",ey.position);
+        });
+    });
 }
 
 function resetMap(){
     resetCanvas();
     entities = [];
     atoms_to_entities = {};
+    agent = {};
 }
 
 // function initSpeaker(){
@@ -184,14 +207,10 @@ function resetMap(){
 //     speaker.fabric("center");
 // }
 
-function initAgent(){
-    robot = new Agent("R2D2", "robot", "robot", ["android", "automa"], {name: "android", type: "png"}, 2.5);
-}
-
 function initCanvas(){
-    $("#map").attr("width", "1000px");
-    $("#map").attr("height", "1000px");
-    canvas = new fabric.Canvas("map");
+    $("#canvas").attr("width", "1000px");
+    $("#canvas").attr("height", "1000px");
+    canvas = new fabric.Canvas("canvas");
     canvas.setBackgroundColor("#eee");
     canvas.on('object:moving', snapToGrid);
     drawGrid("#fff");
@@ -201,12 +220,11 @@ function initChain(){
     initSpeechRecognition();
     initSpeechSynthesis();
     initCanvas();
-    Promise.all([fetchAllTypologies(), fetchAllMaps()]).then(function(){
+    Promise.all([fetchAllObjectTypologies(), fetchAllAgentTypologies(), fetchAllMaps()]).then(function(){
         fillTypologiesCollection();
         fillMapsCollection();
-        initAgent();
     }).then(function(){
-        $(".loader").delay(500).fadeOut(1000, function(){
+        $(".loader").delay(500).fadeOut(300, function(){
             $("body").removeClass("loading");
         });
     });
@@ -228,7 +246,7 @@ $(function(){
         if($("#command").val()){
             setHypotheses([{transcript: $("#command").val(), confidence: "1"}]);
             sendCommand();
-            // robot.resetChain();
+            // agent.resetChain();
         }
         e.preventDefault();
     });
